@@ -9,7 +9,7 @@ import skimage as sk
 import skimage.io as io
 from scipy.interpolate import interp2d
 from scipy.spatial import Delaunay
-from skimage import transform, util
+from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
 
 import morph
@@ -48,6 +48,28 @@ def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
     plt.show()
 
 
+def warp_img(
+    img: np.ndarray,
+    img_pts: np.ndarray,
+    target: np.ndarray,
+    triangulation: Delaunay,
+):
+    for triangle in triangulation.simplices:
+        pass
+
+
+def triangle_mask(img, triangle_vertices: np.ndarray) -> np.ndarray:
+    assert triangle_vertices.shape == (3, 2)  # three points, each with x y coordinates
+    """ Returns a mask for one triangle """
+    mask = np.zeros_like(img, dtype=np.float)
+    rr, cc = sk.draw.polygon(
+        triangle_vertices[:, 0], triangle_vertices[:, 1], shape=img.shape
+    )
+    mask[rr, cc] = 1.0
+    utils.check_img_type(mask)
+    return mask
+
+
 def main(im1_name, im2_name, num_pts):
     # import image
     im1 = utils.read_img(im1_name)
@@ -59,15 +81,18 @@ if __name__ == "__main__":
     im2_name = sys.argv[2]
     #     num_pts = sys.argv[3]
     im1 = utils.setup_img(im1_name)
-    plt.imshow(im1)
-    print(np.max(im1))
+    im2 = utils.setup_img(im2_name)
+    im1_pts = utils.load_points(im1_name)
+    im2_pts = utils.load_points(im2_name)
+    mid_pts = avg_points(im1_pts, im2_pts)
+    triangulation = delaunay(mid_pts)
+    for triangle in triangulation.simplices:
+        # get points in original image
+        # warp the triangle by applying affine transformation
+        pass
+    # triangle = triangulation.simplices[0]
+    # vertices = mid_pts[triangle]
+    # plt.imshow(triangle_mask(im1, vertices))
+    # plt.imshow(im1)
+    plot_tri_mesh(im1, im1_pts, triangulation)
     plt.show()
-    # im2 = utils.setup_img(im2_name)
-    # im1_pts = utils.load_points(im1_name)
-    # im2_pts = utils.load_points(im2_name)
-    # mid_pts = avg_points(im1_pts, im2_pts)
-    # triangles = delaunay(mid_pts)
-    # plot_tri_mesh(im1, im1_pts, triangles)
-    # # plt.close()
-    # plot_tri_mesh(im2, im2_pts, triangles)
-    # plt.close()
