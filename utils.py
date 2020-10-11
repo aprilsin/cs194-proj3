@@ -14,6 +14,7 @@ from skimage import transform, util
 from skimage.util import img_as_float, img_as_ubyte
 
 # DATA_DIR = Path("input")
+DATA_DIR = "data"
 # DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # PICKLE_DIR = Path("points")
@@ -28,72 +29,6 @@ DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
 NUM_POINTS = 41
-
-#######################
-#   INPUT AND OUPUT   #
-#######################
-
-
-def get_points(img: np.ndarray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
-    """
-    Returns an array of points for one image with ginput
-    """
-    print(f"Please select {num_pts} points in image.")
-
-    plt.imshow(img)
-    points = plt.ginput(num_pts)
-    plt.close()
-
-    if APPEND_CORNERS:
-        points.append((0, 0))
-        points.append((0, img.shape[1]))
-        points.append((img.shape[0], 0))
-        points.append((img.shape[0], img.shape[1]))
-
-    return np.array(points)
-
-
-def save_points(img_name, points) -> None:
-    """
-    Saves points as Pickle
-    """
-    print(type(img_name))
-    print("save to: ", img_name + ".p")
-    pickle_name = PICKLE_DIR / Path(img_name + ".p")
-    # pickle_name = re.split("\.", img_name)[0] + ".p"
-    pickle.dump(points, open(pickle_name, "wb"))
-
-
-def load_points(img_name, for_alignment=False) -> np.ndarray:
-    """
-    Loads an array of points saved as Pickle
-    """
-    if for_alignment:
-        pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
-        # pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-    else:
-        pickle_name = PICKLE_DIR / (img_name + ".p")
-        # pickle_name = re.split("\.", img_name)[0] + ".p"
-    assert path.exists(pickle_name)
-    return pickle.load(open(pickle_name, "rb"))
-
-
-def read_img(img_name) -> np.ndarray:
-    """
-    Input Image
-    """
-    im_path = DATA_DIR / (img_name + ".jpg")
-    img = io.imread(im_path)
-    img = img_as_float(img)
-    assert img.dtype == "float64"
-    return img
-
-
-def check_img_type(img) -> None:
-    """ Check image data type """
-    assert img.dtype == "float64"
-    assert np.max(img) <= 1.0 and np.min(img) >= 0.0
-
 
 #######################
 #      Alignment      #
@@ -175,9 +110,68 @@ def align(
     return cropped
 
 
+def check_img_type(img) -> None:
+    """ Check image data type """
+    assert img.dtype == "float64"
+    assert np.max(img) <= 1.0 and np.min(img) >= 0.0
+
+
 #######################
-#    SET UP IMAGE     #
+#   INPUT AND OUPUT   #
 #######################
+
+
+def get_points(img: np.ndarray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
+    """
+    Returns an array of points for one image with ginput
+    """
+    print(f"Please select {num_pts} points in image.")
+
+    plt.imshow(img)
+    points = plt.ginput(num_pts)
+    plt.close()
+
+    if APPEND_CORNERS:
+        points.append((0, 0))
+        points.append((0, img.shape[1]))
+        points.append((img.shape[0], 0))
+        points.append((img.shape[0], img.shape[1]))
+
+    return np.array(points)
+
+
+def save_points(img_name, points) -> None:
+    """
+    Saves points as Pickle
+    """
+    pickle_name = re.split("\.", img_name)[0] + ".p"
+    pickle.dump(points, open(pickle_name, "wb"))
+
+
+def load_points(img_name, for_alignment=False) -> np.ndarray:
+    """
+    Loads an array of points saved as Pickle
+    """
+    if for_alignment:
+        # pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
+        pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+    else:
+        # pickle_name = PICKLE_DIR / (img_name + ".p")
+        pickle_name = re.split("\.", img_name)[0] + ".p"
+    assert path.exists(pickle_name)
+    return pickle.load(open(pickle_name, "rb"))
+
+
+def read_img(img_name) -> np.ndarray:
+    """
+    Input Image
+    """
+    # im_path = DATA_DIR / (img_name + ".jpg")
+    # im_path = DATA_DIR + img_name + ".jpg"
+    img = io.imread(img_name)
+    img = img_as_float(img)
+    assert img.dtype == "float64"
+    return img
 
 
 def setup_img(img_name: str):
@@ -185,8 +179,9 @@ def setup_img(img_name: str):
     im_arr = read_img(img_name)
 
     # align image
-    pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
-    print(pickle_name)
+    # pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
+
+    pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
     if path.exists(pickle_name):
         points = load_points(img_name, for_alignment=True)
     else:
@@ -194,12 +189,17 @@ def setup_img(img_name: str):
         points = get_points(im_arr, 2)
         save_points(pickle_name, points)
     img = align(im_arr, points)
+    io.imsave(
+        re.split("\.", img_name)[0] + "_align" + re.split("\.", img_name)[1],
+        img,
+        format="jpg",
+    )
 
     # set up correspondence
-    pickle_name = PICKLE_DIR / (img_name + ".p")
+    # pickle_name = PICKLE_DIR / (img_name + ".p")
+    pickle_name = re.split("\.", img_name)[0] + ".p"
     if not path.exists(pickle_name):
-        points = get_points(im_arr, NUM_POINTS)
+        points = get_points(img, NUM_POINTS)
         save_points(pickle_name, points)
 
-    aligned_img_name = DATA_DIR.join
     return img
