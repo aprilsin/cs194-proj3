@@ -1,17 +1,18 @@
 # morphing sequence
 
+import math
+from pathlib import Path
+from typing import Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
+import scipy
 import skimage as sk
 import skimage.io as io
-from skimage.util import img_as_ubyte, img_as_float
-from pathlib import Path
-import matplotlib.pyplot as plt
-import math
-import numpy as np
-import matplotlib.pyplot as plt
 from skimage import util
-from typing import Tuple
-import utils, scipy
+from skimage.util import img_as_float, img_as_ubyte
+
+import utils
 
 NUM_POINTS = 10
 NUM_FRAMES = 10

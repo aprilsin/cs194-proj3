@@ -1,20 +1,19 @@
+import math
+import sys
+from pathlib import Path
+from typing import Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import skimage as sk
 import skimage.io as io
-from skimage.util import img_as_ubyte, img_as_float
-from pathlib import Path
-import matplotlib.pyplot as plt
-import math
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage import util, transform
-from typing import Tuple
-import sys
-import morph, utils
-from scipy.spatial import Delaunay
 from scipy.interpolate import interp2d
+from scipy.spatial import Delaunay
+from skimage import transform, util
+from skimage.util import img_as_float, img_as_ubyte
 
-from pathlib import Path
+import morph
+import utils
 
 data = Path("input")
 data.mkdir(parents=True, exist_ok=True)
@@ -39,10 +38,11 @@ def delaunay(points):
     return Delaunay(points)
 
 
-def plot_tri_mesh(points, triangulation) -> None:
+def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
     """
     Displays the triangular mesh of an image
     """
+    plt.imshow(img)
     plt.triplot(points[:, 0], points[:, 1], triangulation.simplices)
     plt.plot(points[:, 0], points[:, 1], "o")
     plt.show()
@@ -59,8 +59,15 @@ if __name__ == "__main__":
     im2_name = sys.argv[2]
     #     num_pts = sys.argv[3]
     im1 = utils.setup_img(im1_name)
-    im2 = utils.setup_img(im2_name)
-    im1_pts = utils.load_points(im1_name)
-    im2_pts = utils.load_points(im2_name)
-    mid_pts = avg_points(im1_pts, im2_pts)
-    plot_tri_mesh(mid_pts, delaunay(mid_pts))
+    plt.imshow(im1)
+    print(np.max(im1))
+    plt.show()
+    # im2 = utils.setup_img(im2_name)
+    # im1_pts = utils.load_points(im1_name)
+    # im2_pts = utils.load_points(im2_name)
+    # mid_pts = avg_points(im1_pts, im2_pts)
+    # triangles = delaunay(mid_pts)
+    # plot_tri_mesh(im1, im1_pts, triangles)
+    # # plt.close()
+    # plot_tri_mesh(im2, im2_pts, triangles)
+    # plt.close()

@@ -1,17 +1,15 @@
+import math
+from pathlib import Path
+from typing import Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import skimage as sk
 import skimage.io as io
-from skimage.util import img_as_ubyte, img_as_float
-from pathlib import Path
-import matplotlib.pyplot as plt
-import math
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage import util, transform
-from typing import Tuple
-
-from scipy.spatial import Delaunay
 from scipy.interpolate import interp2d
+from scipy.spatial import Delaunay
+from skimage import transform, util
+from skimage.util import img_as_float, img_as_ubyte
 
 """ Compute the (weighted) average points of correspondence"""
 def avg_points(im1_pts, im2_pts, alpha=0.5):
