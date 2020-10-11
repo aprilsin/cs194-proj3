@@ -16,9 +16,9 @@ from scipy.spatial import Delaunay
 from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
 
-DEFAULT_HEIGHT = 700
-DEFAULT_WIDTH = 600
-DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.35
+DEFAULT_HEIGHT = 575
+DEFAULT_WIDTH = 547
+DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
 #######################
@@ -45,16 +45,20 @@ def align(
     diff = abs(actual_eye_len - DEFAULT_EYE_LEN) / DEFAULT_EYE_LEN
     scale = DEFAULT_EYE_LEN / actual_eye_len
     if diff > 0.12:
+        print(0,img.min(),img.max())
         scaled = transform.rescale(
             img,
             scale=scale,
             preserve_range=True,
             multichannel=True,
             mode=PAD_MODE,
-        )
+        ).clip(0, 1)
+        print(1, scaled.min(),scaled.max())
     else:
         scaled = img
-
+        print(2, scaled.min,scaled.max())
+    assert_img_type(scaled)
+    
     # do crop
     scaled_h, scaled_w = scaled.shape[0], scaled.shape[1]
     col_center, row_center = find_centers(left_eye * scale, right_eye * scale)
@@ -98,13 +102,14 @@ def align(
         col_end += 1
     cropped = padded[row_start:row_end, col_start:col_end, :]
     assert cropped.shape[0] == DEFAULT_HEIGHT and cropped.shape[1] == DEFAULT_WIDTH
+    assert_img_type(cropped)
     return cropped
 
 
-def check_img_type(img) -> None:
+def assert_img_type(img) -> None:
     """ Check image data type """
-    assert img.dtype == "float64"
-    assert np.max(img) <= 1.0 and np.min(img) >= 0.0
+    assert img.dtype == "float64", img.dtype
+    assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
 
 
 #######################
@@ -159,29 +164,52 @@ def read_img(img_name) -> np.ndarray:
     # im_path = DATA_DIR / (img_name + ".jpg")
     # im_path = DATA_DIR + img_name + ".jpg"
     img = io.imread(img_name)
+    print(f'range as ubyte: {img.min(), img.max()}')
     img = img_as_float(img)
-    assert img.dtype == "float64"
+    print(f'range as float: {img.min(), img.max()}')
+    assert_img_type(img)
     return img
 
 
 def align_img(img_name: str):
     im_arr = read_img(img_name)
-#     pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-#     if path.exists(pickle_name):
-#         points = pickle.load(open(pickle_name, "rb"))
-#     else:
-    print("Please select the eyes for alignment.")
-    points = get_points(im_arr, 2)
-#         pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-#         save_points(pickle_name, points)
+    pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+    if path.exists(pickle_name):
+        points = pickle.load(open(pickle_name, "rb"))
+    else:
+        print("Please select the eyes for alignment.")
+        points = get_points(im_arr, 2)
+        pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+        save_points(pickle_name, points)
     aligned_img_name = re.split("\.", img_name)[0] + "_align" + ".jpg"
+    print('max', im_arr.max())
     aligned_im_arr = align(im_arr, points)
-    print(aligned_im_arr.dtype)
+    assert_img_type(aligned_im_arr)
     io.imsave(
         aligned_img_name,
         img_as_ubyte(aligned_im_arr),
         format="jpg",
     )
+    assert_img_type(aligned_im_arr)
+    return aligned_im_arr
+    
+def match_img_size(im1:np.ndarray, im2:np.ndarray):
+    # Make images the same size
+    h1, w1, c1 = im1.shape
+    h2, w2, c2 = im2.shape
+    assert c1 == c2
+    
+    if h1 < h2:
+        im2 = im2[int(np.floor((h2 - h1) / 2.0)) : -int(np.ceil((h2 - h1) / 2.0)), :, :]
+    elif h1 > h2:
+        im1 = im1[int(np.floor((h1 - h2) / 2.0)) : -int(np.ceil((h1 - h2) / 2.0)), :, :]
+    if w1 < w2:
+        im2 = im2[:, int(np.floor((w2 - w1) / 2.0)) : -int(np.ceil((w2 - w1) / 2.0)), :]
+    elif w1 > w2:
+        im1 = im1[:, int(np.floor((w1 - w2) / 2.0)) : -int(np.ceil((w1 - w2) / 2.0)), :]
+    print("image shapes: ", im1.shape, im2.shape)
+    assert im1.shape == im2.shape
+    return im1, im2
 
 
 def shape_vector_exist(image_name):

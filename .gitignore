@@ -6,3 +6,4 @@ data/
 output/
 *.pyc
 *.mov
+align_image_code.py 
