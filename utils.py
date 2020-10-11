@@ -1,34 +1,25 @@
+import argparse
 import math
 import pickle
 import re
-from os import path
+import sys
 from pathlib import Path
+from os import path
 from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import PIL
 import skimage as sk
 import skimage.io as io
-from skimage import transform, util
+from scipy.interpolate import interp2d
+from scipy.spatial import Delaunay
+from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
 
-# DATA_DIR = Path("input")
-DATA_DIR = "data"
-# DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-# PICKLE_DIR = Path("points")
-# PICKLE_DIR.mkdir(parents=True, exist_ok=True)
-
-# OUT_DIR = Path("output")
-# OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-DEFAULT_HEIGHT = 575
-DEFAULT_WIDTH = 547
-DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
+DEFAULT_HEIGHT = 700
+DEFAULT_WIDTH = 600
+DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.35
 PAD_MODE = "edge"
-
-NUM_POINTS = 41
 
 #######################
 #      Alignment      #
@@ -139,7 +130,6 @@ def get_points(img: np.ndarray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray
 
     return np.array(points)
 
-
 def save_points(img_name, points) -> None:
     """
     Saves points as Pickle
@@ -174,32 +164,33 @@ def read_img(img_name) -> np.ndarray:
     return img
 
 
-def setup_img(img_name: str):
-    print(img_name)
+def align_img(img_name: str):
     im_arr = read_img(img_name)
-
-    # align image
-    # pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
-
-    pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-    if path.exists(pickle_name):
-        points = load_points(img_name, for_alignment=True)
-    else:
-        print("Please select the eyes for alignment.")
-        points = get_points(im_arr, 2)
-        save_points(pickle_name, points)
-    img = align(im_arr, points)
+#     pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+#     if path.exists(pickle_name):
+#         points = pickle.load(open(pickle_name, "rb"))
+#     else:
+    print("Please select the eyes for alignment.")
+    points = get_points(im_arr, 2)
+#         pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+#         save_points(pickle_name, points)
+    aligned_img_name = re.split("\.", img_name)[0] + "_align" + ".jpg"
+    aligned_im_arr = align(im_arr, points)
+    print(aligned_im_arr.dtype)
     io.imsave(
-        re.split("\.", img_name)[0] + "_align" + re.split("\.", img_name)[1],
-        img,
+        aligned_img_name,
+        img_as_ubyte(aligned_im_arr),
         format="jpg",
     )
 
-    # set up correspondence
-    # pickle_name = PICKLE_DIR / (img_name + ".p")
+
+def shape_vector_exist(image_name):
+    return path.exists(re.split("\.", image_name)[0] + ".p")
+
+
+def define_shape_vector(img_name: str):
+    im_arr = read_img(img_name)
     pickle_name = re.split("\.", img_name)[0] + ".p"
     if not path.exists(pickle_name):
-        points = get_points(img, NUM_POINTS)
+        points = utils.get_points(img_name, NUM_POINTS)
         save_points(pickle_name, points)
-
-    return img

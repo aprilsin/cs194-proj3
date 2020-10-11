@@ -1,7 +1,10 @@
 import argparse
 import math
+import pickle
+import re
 import sys
 from pathlib import Path
+from os import path
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -16,35 +19,87 @@ from skimage.util import img_as_float, img_as_ubyte
 import morph
 import utils
 
-data = Path("input")
-data.mkdir(parents=True, exist_ok=True)
+NUM_POINTS = 41
+# DATA_DIR = Path("input")
+DATA_DIR = "data"
+# DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# PICKLE_DIR = Path("points")
+# PICKLE_DIR.mkdir(parents=True, exist_ok=True)
+
+OUT_DIR = Path("output")
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
     intro = "Project 3 for CS 194-26: Face Morphing\n"
+
     parser = argparse.ArgumentParser(intro)
-    parser.add_argument("im1_path", type=str, help="image 1 for morphing")
-    parser.add_argument("im2_path", type=str, help="image 2 for morphing")
+
+    parser.add_argument(
+        "method",
+        metavar="Method",
+        type=str,
+        help="Method to use (Align, Middle, Video, Population).",
+    )
+
+    parser.add_argument("im1", type=str, help="image 1 for morphing")
+
+    parser.add_argument("im2", type=str, help="image 2 for morphing")
+
+    parser.add_argument(
+        "out",
+        metavar="Output",
+        type=str,
+        default=OUT_DIR / Path("untitled"),
+        help="Path in which to save the result.",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--depth",
+        dest="depth",
+        type=int,
+        default=10,
+        help="Sets the number of interpolation layers for the movie.",
+    )
+
+    parser.add_argument(
+        "--reset",
+        dest="reset",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Asks for point settings again",
+    )
+
     args = parser.parse_args()
+    if not (
+        args.method == "Middle"
+        or args.method == "Video"
+        or args.method == "Population"
+    ):
+        print("Invalid method!")
+        exit()
 
-    # im2_name = args.im1_path.stem
+    if args.reset:
+        input("If you don't want to remove the current config, Interrupt process (C-c)")
+        sys("rm *.p")
 
-    im1 = utils.setup_img(args.im1_path)
-    # print(type(im1))
-    # im2 = utils.setup_img(im2_name)
+    if args.align:
+        utils.align_img(args.im1)
+        utils.align_img(args.im2)
+        exit()
 
-    # im1_pts = utils.load_points(im1_name)
-    # im2_pts = utils.load_points(im2_name)
+    if not utils.shape_vector_exist(args.im1):
+        utils.define_shape_vector(args.im1)
+    if not utils.shape_vector_exist(args.im2):
+        utils.define_shape_vector(args.im2)
 
-    # mid_pts = avg_points(im1_pts, im2_pts)
-    # triangulation = delaunay(mid_pts)
-    # for triangle in triangulation.simplices:
-    # get points in original image
-    # warp the triangle by applying affine transformation
-    # pass
-    # triangle = triangulation.simplices[0]
-    # vertices = mid_pts[triangle]
-    # plt.imshow(triangle_mask(im1, vertices))
-    # plt.imshow(im1)
-    # plot_tri_mesh(im1, im1_pts, triangulation)
-    # plt.show()
+    if args.method == "Middle":
+        morph.compute_middle_object(args.im1, args.im2, args.out, args.alpha)
+        exit()
+
+    if args.method == "Video":
+        morph.compute_morph_video(args.im1, args.im2, args.out, args.depth)
+        exit()

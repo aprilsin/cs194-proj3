@@ -98,6 +98,10 @@ def cross_dissolve():
     pass
 
 
-def morph():
+def compute_middle_object():
+    # for each timeframe
+    pass
+
+def compute_morph_video():
     # for each timeframe
     pass
