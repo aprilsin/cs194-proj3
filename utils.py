@@ -77,7 +77,6 @@ def read_img(img_name) -> np.ndarray:
 def check_img_type(img) -> None:
     """ Check image data type """
     assert img.dtype == "float64"
-    print(np.max(img), np.min(img))
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0
 
 
