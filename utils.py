@@ -13,14 +13,14 @@ import skimage.io as io
 from skimage import transform, util
 from skimage.util import img_as_float, img_as_ubyte
 
-DATA_DIR = Path("input")
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+# DATA_DIR = Path("input")
+# DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-PICKLE_DIR = Path("points")
-PICKLE_DIR.mkdir(parents=True, exist_ok=True)
+# PICKLE_DIR = Path("points")
+# PICKLE_DIR.mkdir(parents=True, exist_ok=True)
 
-OUT_DIR = Path("output")
-OUT_DIR.mkdir(parents=True, exist_ok=True)
+# OUT_DIR = Path("output")
+# OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_HEIGHT = 575
 DEFAULT_WIDTH = 547
