@@ -24,12 +24,15 @@ def set_up_img(img_name):
     utils.save_points()
 
 def get_affine_mat(
-    initial_tri: scipy.spatial.qhull.Delaunay, target: scipy.spatial.qhull.Delaunay
+    initial_tri: list, target: list
 ) -> np.ndarray:
-    pass
+    
     # A*T = B
     # T = A-1 * B
     # return invA * B
+    A = np.matrix([triangle[:,0], triangle[:, 1], [1, 1, 1]])
+    B = np.matrix([target[:,0], target[:, 1], [1, 1, 1]])
+    return lin.inv(A) * B
 
 
 def cross_dissolve():
