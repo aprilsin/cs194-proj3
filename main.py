@@ -58,7 +58,7 @@ if __name__ == "__main__":
     im1_name = sys.argv[1]
     im2_name = sys.argv[2]
     #     num_pts = sys.argv[3]
-    im1 = utils.setup_img(im2_name)
+    im1 = utils.setup_img(im1_name)
     plt.imshow(im1)
     print(np.max(im1))
     plt.show()

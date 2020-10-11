@@ -15,8 +15,8 @@ from skimage.util import img_as_float, img_as_ubyte
 data = Path("input")
 data.mkdir(parents=True, exist_ok=True)
 
-DEFAULT_HEIGHT = 800
-DEFAULT_WIDTH = 600
+DEFAULT_HEIGHT = 801
+DEFAULT_WIDTH = 601
 DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
@@ -129,27 +129,38 @@ def align(
     row_end = row_center + row_shift
 
     rpad_before, rpad_after, cpad_before, cpad_after = 0, 0, 0, 0
+    if target_h % 2 != 0:
+        rpad_after = 1
+    if target_w % 2 != 0:
+        cpad_after = 1
+
     if row_start < 0:
-        rpad_before = abs(row_start)
+        rpad_before += abs(row_start)
         row_start = 0
         row_end += rpad_before
     if row_end > scaled_h:
-        rpad_after = row_end - scaled_h
+        rpad_after += row_end - scaled_h
     if col_start < 0:
-        cpad_before = abs(col_start)
+        cpad_before += abs(col_start)
         col_start = 0
         col_end += cpad_before
     if col_end > scaled_w:
-        cpad_after = col_end - scaled_w
-
+        cpad_after += col_end - scaled_w
+    print("scaled", scaled.shape)
+    print("padding", rpad_before, rpad_after, cpad_before, cpad_after)
     padded = np.pad(
         scaled,
         pad_width=((rpad_before, rpad_after), (cpad_before, cpad_after), (0, 0)),
         mode=PAD_MODE,
     )
-
+    print("index", row_start, row_end, col_start, col_end)
     assert row_start >= 0 and row_end >= 0 and col_start >= 0 and col_end >= 0
+    if target_h % 2 != 0:
+        row_end += 1
+    if target_w % 2 != 0:
+        col_end += 1
     cropped = padded[row_start:row_end, col_start:col_end, :]
+    print("cropped", cropped.shape)
     assert cropped.shape[0] == DEFAULT_HEIGHT and cropped.shape[1] == DEFAULT_WIDTH
     check_img_type(cropped)
     return cropped
