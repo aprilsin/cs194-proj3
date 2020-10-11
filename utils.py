@@ -7,20 +7,27 @@ from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+import PIL
 import skimage as sk
 import skimage.io as io
 from skimage import transform, util
 from skimage.util import img_as_float, img_as_ubyte
 
-data = Path("input")
-data.mkdir(parents=True, exist_ok=True)
+DATA_DIR = Path("input")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+PICKLE_DIR = Path("points")
+PICKLE_DIR.mkdir(parents=True, exist_ok=True)
+
+OUT_DIR = Path("output")
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_HEIGHT = 575
 DEFAULT_WIDTH = 547
 DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
-NUM_POINTS = 11
+NUM_POINTS = 41
 
 #######################
 #   INPUT AND OUPUT   #
@@ -50,15 +57,23 @@ def save_points(img_name, points) -> None:
     """
     Saves points as Pickle
     """
-    pickle_name = re.split("\.", img_name)[0] + ".p"
+    print(type(img_name))
+    print("save to: ", img_name + ".p")
+    pickle_name = PICKLE_DIR / Path(img_name + ".p")
+    # pickle_name = re.split("\.", img_name)[0] + ".p"
     pickle.dump(points, open(pickle_name, "wb"))
 
 
-def load_points(img_name) -> np.ndarray:
+def load_points(img_name, for_alignment=False) -> np.ndarray:
     """
     Loads an array of points saved as Pickle
     """
-    pickle_name = re.split("\.", img_name)[0] + ".p"
+    if for_alignment:
+        pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
+        # pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
+    else:
+        pickle_name = PICKLE_DIR / (img_name + ".p")
+        # pickle_name = re.split("\.", img_name)[0] + ".p"
     assert path.exists(pickle_name)
     return pickle.load(open(pickle_name, "rb"))
 
@@ -67,7 +82,7 @@ def read_img(img_name) -> np.ndarray:
     """
     Input Image
     """
-    im_path = img_name
+    im_path = DATA_DIR / (img_name + ".jpg")
     img = io.imread(im_path)
     img = img_as_float(img)
     assert img.dtype == "float64"
@@ -95,7 +110,7 @@ def align(
     img: np.ndarray, points: np.ndarray, target_h=DEFAULT_HEIGHT, target_w=DEFAULT_WIDTH
 ) -> np.ndarray:
 
-    left_eye, right_eye, top, bottom = points[0], points[1], points[2], points[3]
+    left_eye, right_eye = points[0], points[1]
 
     # rescale
     actual_eye_len = np.sqrt(
@@ -103,7 +118,7 @@ def align(
     )
     diff = abs(actual_eye_len - DEFAULT_EYE_LEN) / DEFAULT_EYE_LEN
     scale = DEFAULT_EYE_LEN / actual_eye_len
-    if diff > 0.1:
+    if diff > 0.12:
         scaled = transform.rescale(
             img,
             scale=scale,
@@ -114,8 +129,8 @@ def align(
     else:
         scaled = img
 
-    scaled_h, scaled_w = scaled.shape[0], scaled.shape[1]
     # do crop
+    scaled_h, scaled_w = scaled.shape[0], scaled.shape[1]
     col_center, row_center = find_centers(left_eye * scale, right_eye * scale)
     row_center += 50
 
@@ -165,12 +180,26 @@ def align(
 #######################
 
 
-def setup_img(img_name):
+def setup_img(img_name: str):
+    print(img_name)
     im_arr = read_img(img_name)
-    pickle_name = re.split("\.", img_name)[0] + ".p"
+
+    # align image
+    pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
+    print(pickle_name)
     if path.exists(pickle_name):
-        points = load_points(img_name)
+        points = load_points(img_name, for_alignment=True)
     else:
+        print("Please select the eyes for alignment.")
+        points = get_points(im_arr, 2)
+        save_points(pickle_name, points)
+    img = align(im_arr, points)
+
+    # set up correspondence
+    pickle_name = PICKLE_DIR / (img_name + ".p")
+    if not path.exists(pickle_name):
         points = get_points(im_arr, NUM_POINTS)
-        save_points(img_name, points)
-    return align(im_arr, points)
+        save_points(pickle_name, points)
+
+    aligned_img_name = DATA_DIR.join
+    return img
