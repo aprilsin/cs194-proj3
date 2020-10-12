@@ -16,44 +16,8 @@ from scipy.spatial import Delaunay
 from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
 
-NUM_CHANNELS = 3
-DEFAULT_HEIGHT = 575
-DEFAULT_WIDTH = 547
-DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
-PAD_MODE = "edge"
-
-
-ToImgArray = Union[os.PathLike, np.ndarray]
-ZeroOneFloatArray = np.ndarray
-UbyteArray = np.ndarray
-
-
-def to_img_arr(x: ToImgArray) -> np.ndarray:
-    if isinstance(x, np.ndarray):
-        return img_as_float(x).clip(0, 1)
-    elif isinstance(x, (str, Path, os.PathLike)):
-        x = Path(x)
-        if x.suffix in (".jpeg", ".jpg"):
-            img = io.imread(x)
-            img = img_as_float(img)
-            assert_img_type(img)
-            return img
-        else:
-            raise ValueError(f"Didn't expect type {type(x)}")
-
-
-ToPoints = Union[os.PathLike, np.ndarray]
-
-
-def to_points(x: ToPoints) -> np.ndarray:
-    if isinstance(x, np.ndarray):
-        return x
-    elif isinstance(x, (str, Path, os.PathLike)):
-        x = Path(x)
-        if x.suffix in (".pkl", ".p"):
-            return pickle.load(open(x, "rb"))
-        else:
-            raise ValueError(f"Didn't expect type {type(x)}")
+from constants import *
+from my_types import *
 
 
 #######################
@@ -148,13 +112,6 @@ def align_img(
     assert aligned.shape[0] == DEFAULT_HEIGHT and aligned.shape[1] == DEFAULT_WIDTH
     assert_img_type(aligned)
     return aligned, points
-
-
-def assert_img_type(img: np.ndarray) -> None:
-    """ Check image data type """
-    assert img.dtype == "float64", img.dtype
-    assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
-    assert np.ndim(img) == 3
 
 
 #######################
