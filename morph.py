@@ -119,7 +119,7 @@ def warp_img(
     assert_points(img_pts)
     assert_points(target_pts)
 
-    warped = np.zeros_like(img)
+    warped = np.zeros_like(img, dtype="float64")
     # num_triangles, _, _ = triangulation.simplices
     for simplex in triangulation.simplices:
 
@@ -131,8 +131,23 @@ def warp_img(
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
+        for r in src_rr:
+            r = math.floor(r)
+        for c in src_cc:
+            c = math.floor(c)
+        # src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
+        # print(type(target_rr), type(src_cc))
+        print(len(target_rr), len(target_cc))
+        print(len(src_rr), len(src_cc))
+        assert (isinstance(r, int) and isinstance(c, int) for r, c in target_rr)
+        print("asserted")
+        # assert (isinstance(r, int) for r, c in src_rr)
+        # assert (isinstance(r, int) for r in src_rr)
+        # assert (isinstance(r, int) for r in src_rr)
+        # img = img_as_ubyte(img)
         warped[target_rr, target_cc] = img[src_rr, src_cc]
+        # img = img_as_float
+    # warped = img_as_float(img)
     assert_img_type(warped)
     return warped
 
@@ -153,7 +168,9 @@ def compute_middle_object(
 
     mid_pts = weighted_avg(im1_pts, im2_pts, alpha=alpha)
     triangulation = delaunay(mid_pts)
+    print("warp im1")
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
+    print("warp im2")
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
     middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
     return middle_img, triangulation

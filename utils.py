@@ -60,7 +60,40 @@ def load_points(name: os.PathLike) -> np.ndarray:
     return pickle.load(open(pickle_name, "rb"))
 
 
+def load_points_from_asf(file_name, APPEND_CORNERS=True) -> np.ndarray:
+    asf = open(file_name, "r")
+    lines_read = asf.readlines()
+    num_pts = int(lines_read[9])
+    lines = []
+    for i in range(16, num_pts + 16):
+        lines.append(lines_read[i])
 
+    points = []
+    for line in lines:
+        data = line.split(" \t")
+        points.append((float(data[2]), float(data[3])))
+    if APPEND_CORNERS:
+        points.append((0.0, 0.0))
+        points.append((1.0, 0.0))
+        points.append((0.0, 1.0))
+        points.append((1.0, 1.0))
+    points = np.array(points)
+    points[:, 0] *= POP_WIDTH
+    points[:, 1] *= POP_HEIGHT
+
+    # points = np.genfromtxt(
+    #     file_name,
+    #     dtype="float",
+    #     comments="#",
+    #     skip_header=1,
+    #     skip_footer=1,
+    #     usecols=(2, 3),
+    # )
+    # points.append([0.0, 0.0])
+    # points.append([1.0, 0.0])
+    # points.append([0.0, 1.0])
+    # points.append([1.0, 1.0])
+    return points
 
 
 #######################
@@ -81,6 +114,7 @@ def align_img(
     right_idx=0,
     target_h=DEFAULT_HEIGHT,
     target_w=DEFAULT_WIDTH,
+    SUPPRESS_DISPLAY=False,
 ) -> np.ndarray:
 
     img = to_img_arr(img)
@@ -89,19 +123,21 @@ def align_img(
         points = pick_points(img, 2)
     points = to_points(points)
     left_eye, right_eye = points[left_idx], points[right_idx]
-    print("eye coordinates:", left_eye, right_eye)
+    if not SUPPRESS_DISPLAY:
+        print("eye coordinates:", left_eye, right_eye)
 
     # rescale
     actual_eye_len = np.sqrt(
         (right_eye[1] - left_eye[1]) ** 2 + (right_eye[0] - left_eye[0]) ** 2
     )
     diff = abs(actual_eye_len - DEFAULT_EYE_LEN) / DEFAULT_EYE_LEN
-    print(actual_eye_len)
     scale = DEFAULT_EYE_LEN / actual_eye_len
 
     if diff > 0.2:
         assert not np.isnan(img).any()
-        print(f"scaling by {scale}")
+        assert scale < 5, f"unreasonable scale of {scale}"
+        if not SUPPRESS_DISPLAY:
+            print(f"scaling by {scale}")
         scaled = transform.rescale(
             img,
             scale=scale,
@@ -177,3 +213,21 @@ def match_img_size(im1: np.ndarray, im2: np.ndarray):
         im1 = im1[:, int(np.floor((w1 - w2) / 2.0)) : -int(np.ceil((w1 - w2) / 2.0)), :]
     assert im1.shape == im2.shape
     return im1, im2
+
+
+###################
+#     DISPLAY     #
+###################
+
+
+def plot_points(img: ToImgArray, points: ToPoints, annotate=True) -> None:
+    img = to_img_arr(img)
+    points = to_points(points)
+
+    fig, ax = plt.subplots()
+    plt.imshow(img)
+    ax.scatter(points[:, 0], points[:, 1])
+    n = np.arange(0, len(points))
+    for i, txt in enumerate(n):
+        ax.annotate(txt, (points[:, 0][i], points[:, 1][i]))
+    plt.show()

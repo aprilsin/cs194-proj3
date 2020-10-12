@@ -29,41 +29,6 @@ def to_img_arr(x: ToImgArray) -> np.ndarray:
             raise ValueError(f"Didn't expect type {type(x)}")
 
 
-def load_points_from_asf(file_name) -> np.ndarray:
-    asf = open(file_name, "r")
-    lines_read = asf.readlines()
-    num_pts = int(lines_read[9])
-    lines = []
-    for i in range(16, num_pts + 16):
-        lines.append(lines_read[i])
-
-    points = []
-    for line in lines:
-        data = line.split(" \t")
-        points.append((float(data[2]), float(data[3])))
-    points.append((0.0, 0.0))
-    points.append((1.0, 0.0))
-    points.append((0.0, 1.0))
-    points.append((1.0, 1.0))
-    points = np.array(points)
-    points[:, 0] *= POP_HEIGHT
-    points[:, 1] *= POP_WIDTH
-
-    # points = np.genfromtxt(
-    #     file_name,
-    #     dtype="float",
-    #     comments="#",
-    #     skip_header=1,
-    #     skip_footer=1,
-    #     usecols=(2, 3),
-    # )
-    # points.append([0.0, 0.0])
-    # points.append([1.0, 0.0])
-    # points.append([0.0, 1.0])
-    # points.append([1.0, 1.0])
-    return points
-
-
 def to_points(x: ToPoints) -> np.ndarray:
     if isinstance(x, np.ndarray):
         return x
@@ -74,7 +39,18 @@ def to_points(x: ToPoints) -> np.ndarray:
             assert_points(points)
             return points
         elif x.suffix == ".asf":
-            points = load_points_from_asf(x)
+            asf = open(x, "r")
+            lines_read = asf.readlines()
+            num_pts = int(lines_read[9])
+            lines = []
+            for i in range(16, num_pts + 16):
+                lines.append(lines_read[i])
+
+            points = []
+            for line in lines:
+                data = line.split(" \t")
+                points.append((float(data[2]), float(data[3])))
+            points = np.array(points)
             assert_points(points)
             return points
         else:
@@ -83,6 +59,7 @@ def to_points(x: ToPoints) -> np.ndarray:
 
 def assert_img_type(img: np.ndarray) -> bool:
     """ Check image data type """
+    assert isinstance(img, np.ndarray), f"expect ndarray but got {type(img)}"
     assert img.dtype == "float64", img.dtype
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
     assert np.ndim(img) == 3
