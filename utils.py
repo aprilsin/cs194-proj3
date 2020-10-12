@@ -102,10 +102,18 @@ def load_points_from_asf(file_name, APPEND_CORNERS=True) -> np.ndarray:
 
 
 def find_centers(p1, p2) -> Tuple[int, int]:
-    cx = int(np.round(np.mean([p1[0], p2[0]])))
-    cy = int(np.round(np.mean([p1[1], p2[1]])))
-    return cx, cy
+    cr = int(np.round(np.mean([p1[0], p2[0]])))
+    cc = int(np.round(np.mean([p1[1], p2[1]])))
+    return cr, cc
 
+def recenter(im, r, c):
+    R, C, _ = im.shape
+    rpad = (int) (np.abs(2*r+1 - R))
+    cpad = (int) (np.abs(2*c+1 - C))
+    return np.pad(
+        im, [(0 if r > (R-1)/2 else rpad, 0 if r < (R-1)/2 else rpad),
+             (0 if c > (C-1)/2 else cpad, 0 if c < (C-1)/2 else cpad),
+             (0, 0)], 'constant')
 
 def align_img(
     img: ToImgArray,
