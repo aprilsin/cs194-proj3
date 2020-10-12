@@ -74,6 +74,7 @@ def get_triangle_pixels(
     triangle_vertices: np.ndarray, shape=(DEFAULT_HEIGHT, DEFAULT_WIDTH)
 ):
     """ Returns the coordinates of pixels within triangle for an image """
+    assert_is_triangle(triangle_vertices)
     rr, cc = sk.draw.polygon(
         triangle_vertices[:, 0], triangle_vertices[:, 1], shape=shape
     )
@@ -85,6 +86,8 @@ def create_triangle_mask(
 ) -> np.ndarray:
     # assert triangle_vertices.shape == (3, 2)  # three points, each with x y coordinates
     """ Returns a mask for one triangle """
+    assert_is_triangle(triangle_vertices)
+
     mask = np.zeros(shape, dtype=np.float)
     rr, cc = get_triangle_pixels(triangle_vertices)
     mask[rr, cc] = 1.0
@@ -94,6 +97,7 @@ def create_triangle_mask(
 
 def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     """ Returns the coordinates of pixels from original image. """
+    assert_img_type(img)
     assert_is_triangle(img_triangle_vertices)
     assert_is_triangle(target_triangle_vertices)
 
@@ -112,6 +116,10 @@ def warp_img(
     target_pts: np.ndarray,
     triangulation: Delaunay,
 ):
+    assert_img_type(img)
+    assert_points(img_pts)
+    assert_points(target_pts)
+
     warped = np.zeros_like(img)
     # num_triangles, _, _ = triangulation.simplices
     for simplex in triangulation.simplices:
@@ -139,8 +147,8 @@ def warp_img(
 
 
 def cross_dissolve(warped_im1, warped_im2, alpha=0.5):
-    utils.assert_img_type(warped_im1)
-    utils.assert_img_type(warped_im2)
+    assert_img_type(warped_im1)
+    assert_img_type(warped_im2)
 
     result = np.zeros_like(warped_im1)
     for channel in range(utils.NUM_CHANNELS):
@@ -148,7 +156,14 @@ def cross_dissolve(warped_im1, warped_im2, alpha=0.5):
     return result
 
 
-def compute_middle_object(im1, im2, im1_pts, im2_pts, alpha=0.5):
+def compute_middle_object(
+    im1: ToImgArray, im2: ToImgArray, im1_pts: ToPoints, im2_pts: ToPoints, alpha=0.5
+):
+    im1 = to_img_arr(im1)
+    im2 = to_img_arr(im2)
+    im1_pts = to_points(im1_pts)
+    im2_pts = to_points(im2_pts)
+
     mid_pts = weighted_avg(im1_pts, im2_pts, alpha)
     triangulation = delaunay(mid_pts)
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
@@ -166,6 +181,11 @@ from matplotlib import animation
 def compute_morph_video(
     im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRAMES, boomerang=True
 ):
+    im1 = to_img_arr(im1)
+    im2 = to_img_arr(im2)
+    im1_pts = to_points(im1_pts)
+    im2_pts = to_points(im2_pts)
+
     # for each timeframe
     frames = []
     fig = plt.figure(frameon=False)

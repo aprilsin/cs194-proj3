@@ -35,7 +35,9 @@ def to_points(x: ToPoints) -> np.ndarray:
     elif isinstance(x, (str, Path, os.PathLike)):
         x = Path(x)
         if x.suffix in (".pkl", ".p"):
-            return pickle.load(open(x, "rb"))
+            points = pickle.load(open(x, "rb"))
+            assert_points(points)
+            return points
         else:
             raise ValueError(f"Didn't expect type {type(x)}")
 
@@ -51,4 +53,12 @@ def assert_img_type(img: np.ndarray) -> bool:
 def assert_is_triangle(triangle: np.ndarray) -> bool:
     """ Check image data type """
     assert triangle.shape == (3, 2), triangle.shape
+    assert (triangle >= 0).all()
+    return True
+
+
+def assert_points(points: np.ndarray) -> bool:
+    assert isinstance(points, np.ndarray)
+    assert (points >= 0).all()
+    assert points.shape[1] == 2
     return True
