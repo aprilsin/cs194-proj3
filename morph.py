@@ -136,14 +136,6 @@ def warp_img(
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        # src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
-        # XXX you have to use floor before casting to int since int can *round up*
-        # src_rr, src_cc = ifloor(src_rr) - 5, ifloor(src_cc) - 5
-        # print(src_cc.shape, src_cc)
-        # warped[:, target_cc]
-        # warped[src_cc, :]
-        # img[:, src_cc]
-        # img[src_rr, :]
 
         src_rr, src_cc = (
             np.int32(src_rr).clip(0, DEFAULT_HEIGHT - 1),
@@ -197,12 +189,14 @@ def compute_morph_video(
     ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
     ax.set_axis_off()
     fig.add_axes(ax)
-    fig.set_size_inches(int(im1.shape[1] / 50), int(im1.shape[0] / 50), 10)
+    fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+    fig.set_size_inches(int(im1.shape[1] / 50), int(im1.shape[0] / 50))
     alphas = np.linspace(0, 1, num_frames)
-
+    # fig = plt.figure(frameon=False)
+    # plt.axis("off")
     for i, alpha in enumerate(alphas, start=1):
         start = time.time()
-        curr_frame, _ = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
+        curr_frame, _, _ = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
         print(f"Frame {i} morph time with alpha {alpha}:", time.time() - start)
         frames.append(curr_frame)
 

@@ -44,7 +44,7 @@ def compute_population_mean(
 
     assert_points(mean_pts)
     assert_img_type(mean_img)
-    return mean_img
+    return mean_img, mean_pts, triangulation
 
 
 def caricature(img, mean_img, img_pts, mean_pts):
