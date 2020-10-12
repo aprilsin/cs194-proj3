@@ -40,13 +40,15 @@ def to_points(x: ToPoints) -> np.ndarray:
             raise ValueError(f"Didn't expect type {type(x)}")
 
 
-def assert_img_type(img: np.ndarray) -> None:
+def assert_img_type(img: np.ndarray) -> bool:
     """ Check image data type """
     assert img.dtype == "float64", img.dtype
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
     assert np.ndim(img) == 3
+    return True
 
 
-def assert_is_triangle(triangle: np.ndarray) -> None:
+def assert_is_triangle(triangle: np.ndarray) -> bool:
     """ Check image data type """
     assert triangle.shape == (3, 2), triangle.shape
+    return True
