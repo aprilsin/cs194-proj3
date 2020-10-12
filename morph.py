@@ -106,7 +106,7 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     rr, cc = get_triangle_pixels(target_triangle_vertices)
     target_points = np.vstack([rr, cc, np.ones(len(rr))])
     src_points = inverse @ target_points
-    return src_points[0, :], src_points[1, :]
+    return src_points[1, :], src_points[0, :]
 
 
 def ifloor(x: np.ndarray) -> np.ndarray:
@@ -173,7 +173,8 @@ def compute_middle_object(
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
     middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
-    return middle_img, triangulation
+    middle_img = transform.rotate(middle_img, -90)
+    return middle_img, mid_pts, triangulation
 
 
 import copy
