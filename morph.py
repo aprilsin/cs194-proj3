@@ -144,7 +144,12 @@ def warp_img(
         # warped[src_cc, :]
         # img[:, src_cc]
         # img[src_rr, :]
-        src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
+
+        src_rr, src_cc = (
+            np.int32(src_rr).clip(0, DEFAULT_HEIGHT - 1),
+            np.int32(src_cc).clip(0, DEFAULT_WIDTH - 1),
+        )
+        # print(max(target_rr), max(target_cc), max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
     return warped
 
@@ -199,8 +204,6 @@ def compute_morph_video(
         curr_frame, _ = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
         print(f"Frame {i} morph time with alpha {alpha}:", time.time() - start)
         frames.append(curr_frame)
-        # im = plt.imshow(curr_frame)
-        # mov.append([im])
 
     if boomerang:
         reversed_frames = copy.deepcopy(frames)
