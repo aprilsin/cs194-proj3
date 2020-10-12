@@ -111,7 +111,7 @@ def align_img(
     img: ToImgArray,
     points: Optional[ToImgArray] = None,
     left_idx=0,
-    right_idx=0,
+    right_idx=1,
     target_h=DEFAULT_HEIGHT,
     target_w=DEFAULT_WIDTH,
     SUPPRESS_DISPLAY=False,

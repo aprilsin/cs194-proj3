@@ -109,12 +109,17 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     return src_points[0, :], src_points[1, :]
 
 
+def ifloor(x: np.ndarray) -> np.ndarray:
+    """Avoid rounding up by taking floor before int so you can't index out of bounds."""
+    return np.int64(np.floor(x))
+
+
 def warp_img(
     img: np.ndarray,
     img_pts: np.ndarray,
     target_pts: np.ndarray,
     triangulation: Delaunay,
-)->np.ndarray:
+) -> np.ndarray:
     assert_img_type(img)
     assert_points(img_pts)
     assert_points(target_pts)
@@ -132,10 +137,13 @@ def warp_img(
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
         # src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
-        src_rr, src_cc = np.int32(src_rr - 5), np.int32(src_cc - 5)
-        # print(max(target_rr), max(target_cc))
-        # print(max(src_rr), max(src_cc))
-        warped[target_rr, target_cc] = img[src_rr, src_cc]
+        # XXX you have to use floor before casting to int since int can *round up*
+        src_rr, src_cc = ifloor(src_rr) - 5, ifloor(src_cc) - 5
+        print(src_cc.shape, src_cc)
+        warped[:, target_cc]
+        warped[src_cc, :]
+        img[:, src_cc]
+        img[src_rr, :]
     return warped
 
 
@@ -181,6 +189,7 @@ def compute_morph_video(
     ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
     ax.set_axis_off()
     fig.add_axes(ax)
+    fig.set_size_inches(int(im1.shape[1] / 50), int(im1.shape[0] / 50), 10)
     alphas = np.linspace(0, 1, num_frames)
 
     for i, alpha in enumerate(alphas, start=1):
