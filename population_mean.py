@@ -7,7 +7,7 @@ def compute_population_mean(population_imgs: np.ndarray, population_pts: np.ndar
     assert all(assert_img_type(img) for img in population_imgs)
     
     mean_img = population_imgs[0]
-
+    
     mean_pts = np.mean(population_pts, axis=0)
 
 def load_points_from_asf(file_name):

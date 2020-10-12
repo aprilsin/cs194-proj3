@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage as sk
 import skimage.io as io
-from scipy.interpolate import RectBivariateSpline, interp2d
+from scipy import interpolate
 from scipy.spatial import Delaunay
 from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
@@ -101,7 +101,9 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     # inverse of affine is just the transpose
     inverse = np.linalg.inv(affine_mat)
     rr, cc = get_triangle_pixels(target_triangle_vertices)
-    return rr, cc
+    target_points = np.vstack([rr, cc, np.ones(len(rr))])
+    src_points = inverse @ target_points
+    return src_points[0, :], src_points[1, :]
 
 
 def warp_img(
@@ -112,18 +114,27 @@ def warp_img(
 ):
     warped = np.zeros_like(img)
     # num_triangles, _, _ = triangulation.simplices
-    for triangle in points_from_delaunay(target_pts, triangulation.simplices):
-        print("simplices ", triangle)
+    for simplex in triangulation.simplices:
 
-        target_vertices = points_from_delaunay(target_pts, triangulation)
-        print("vertices ", target_vertices.shape)
-        img_vertices = points_from_delaunay(img_pts, triangulation)
-        target_mask = create_triangle_mask(target_vertices, img.shape)
+        target_vertices = target_pts[simplex]
+        img_vertices = img_pts[simplex]
+        assert_is_triangle(target_vertices)
+        assert_is_triangle(img_vertices)
 
         # do inverse warping
-        rr, cc = inverse_affine(img, img_vertices, target_vertices)
-        interp_func = RectBivariateSpline(rr, cc, img)
-        warped[rr, cc] = interp_func(rr, cc, grid=False)
+        target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
+        print("target", max(target_rr), max(target_cc))
+        src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
+        # sort rr and cc
+        # stacked = np.stack([rr, cc], axis=-1)
+        # stacked = stacked[stacked[:, 0].argsort()]
+        # rr, cc = stacked[:, 0], stacked[:, 1]
+        # print(rr)
+        src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
+        print(max(src_rr), max(src_cc))
+        # interp_func = interpolate.interp2d(rr, cc, img)
+        # warped[rr, cc] = interp_func(rr, cc, grid=False)
+        warped[target_rr, target_cc] = img[src_rr, src_cc]
     return warped
 
 
