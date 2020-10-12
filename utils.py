@@ -4,8 +4,8 @@ import pickle
 import re
 import sys
 from pathlib import Path
-from os import path
-from typing import Tuple
+import os
+from typing import Tuple, Union, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,31 +21,66 @@ DEFAULT_WIDTH = 547
 DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
+        
+        
+ToImgArray = Union[os.PathLike, np.ndarray]
+ZeroOneFloatArray = np.ndarray
+UbyteArray = np.ndarray
+
+def to_img_arr(x:ToImgArray)-> np.ndarray:
+    if isinstance(x, np.ndarray): return img_as_float(x).clip(0, 1)
+    elif isinstance(x, (str,Path,os.PathLike)):
+        x = Path(x)
+        if x.suffix in ('.jpeg', '.jpg'):
+            img = io.imread(x)
+            img = img_as_float(img)
+            assert_img_type(img)
+            return img
+        else:
+            raise ValueError(f"Didn't expect type {type(x)}")
+
+ToPoints = Union[os.PathLike, np.ndarray]
+def to_points(x:ToPoints)-> np.ndarray:
+    if isinstance(x, np.ndarray): return x
+    elif isinstance(x, (str,Path,os.PathLike)):
+        x = Path(x)
+        if x.suffix in ('.pkl', '.p'):
+            return pickle.load(open(x, "rb"))
+        else:
+            raise ValueError(f"Didn't expect type {type(x)}")
+
+            
 #######################
 #      Alignment      #
 #######################
 
 
-def find_centers(p1, p2):  # -> Tuple[int, int]:
+def find_centers(p1, p2)   -> Tuple[int, int]:
     cx = int(np.round(np.mean([p1[0], p2[0]])))
     cy = int(np.round(np.mean([p1[1], p2[1]])))
     return cx, cy
 
-
-def align(
-    img: np.ndarray, points: np.ndarray, target_h=DEFAULT_HEIGHT, target_w=DEFAULT_WIDTH
+def align_img(
+    img: ToImgArray, points: Optional[ToImgArray]=None, target_h=DEFAULT_HEIGHT, target_w=DEFAULT_WIDTH
 ) -> np.ndarray:
 
+    img = to_img_arr(img)
+    if points is None:
+        print("Please select the eyes for alignment.")
+        points = pick_points(img, 2)
+    points = to_points(points)
     left_eye, right_eye = points[0], points[1]
-
+    print(left_eye, right_eye)
     # rescale
     actual_eye_len = np.sqrt(
         (right_eye[1] - left_eye[1]) ** 2 + (right_eye[0] - left_eye[0]) ** 2
     )
     diff = abs(actual_eye_len - DEFAULT_EYE_LEN) / DEFAULT_EYE_LEN
+    print(actual_eye_len)
     scale = DEFAULT_EYE_LEN / actual_eye_len
-    if diff > 0.12:
-        print(0,img.min(),img.max())
+    
+    if diff > 0.2:
+        assert not np.isnan(img).any()
         scaled = transform.rescale(
             img,
             scale=scale,
@@ -53,10 +88,8 @@ def align(
             multichannel=True,
             mode=PAD_MODE,
         ).clip(0, 1)
-        print(1, scaled.min(),scaled.max())
     else:
         scaled = img
-        print(2, scaled.min,scaled.max())
     assert_img_type(scaled)
     
     # do crop
@@ -100,98 +133,54 @@ def align(
         row_end += 1
     if target_w % 2 != 0:
         col_end += 1
-    cropped = padded[row_start:row_end, col_start:col_end, :]
-    assert cropped.shape[0] == DEFAULT_HEIGHT and cropped.shape[1] == DEFAULT_WIDTH
-    assert_img_type(cropped)
-    return cropped
+    aligned = padded[row_start:row_end, col_start:col_end, :]
+
+    assert aligned.shape[0] == DEFAULT_HEIGHT and aligned.shape[1] == DEFAULT_WIDTH
+    assert_img_type(aligned)
+    return aligned, points
 
 
-def assert_img_type(img) -> None:
+def assert_img_type(img: np.ndarray) -> None:
     """ Check image data type """
     assert img.dtype == "float64", img.dtype
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
-
 
 #######################
 #   INPUT AND OUPUT   #
 #######################
 
-
-def get_points(img: np.ndarray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
+def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
     """
     Returns an array of points for one image with ginput
     """
+    img = to_img_arr(img)
     print(f"Please select {num_pts} points in image.")
-
     plt.imshow(img)
     points = plt.ginput(num_pts)
     plt.close()
 
     if APPEND_CORNERS:
-        points.append((0, 0))
-        points.append((0, img.shape[1]))
-        points.append((img.shape[0], 0))
-        points.append((img.shape[0], img.shape[1]))
-
+        points.extend([(0, 0),(0, img.shape[1]),(img.shape[0], 0),(img.shape[0], img.shape[1])])
+    print(f"Picked {num_pts} points successfully.")
     return np.array(points)
 
-def save_points(img_name, points) -> None:
+def save_points(points: np.ndarray, name: os.PathLike) -> None:
     """
     Saves points as Pickle
     """
-    pickle_name = re.split("\.", img_name)[0] + ".p"
+    name = Path(name)
+    pickle_name = name.with_suffix('.pkl')
     pickle.dump(points, open(pickle_name, "wb"))
 
 
-def load_points(img_name, for_alignment=False) -> np.ndarray:
+def load_points(name: os.PathLike) -> np.ndarray:
     """
     Loads an array of points saved as Pickle
     """
-    if for_alignment:
-        # pickle_name = PICKLE_DIR / Path(img_name + "_align" + ".p")
-        pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-    else:
-        # pickle_name = PICKLE_DIR / (img_name + ".p")
-        pickle_name = re.split("\.", img_name)[0] + ".p"
-    assert path.exists(pickle_name)
+    name=Path(name)
+    pickle_name = name.with_suffix('.pkl')
     return pickle.load(open(pickle_name, "rb"))
 
-
-def read_img(img_name) -> np.ndarray:
-    """
-    Input Image
-    """
-    # im_path = DATA_DIR / (img_name + ".jpg")
-    # im_path = DATA_DIR + img_name + ".jpg"
-    img = io.imread(img_name)
-    print(f'range as ubyte: {img.min(), img.max()}')
-    img = img_as_float(img)
-    print(f'range as float: {img.min(), img.max()}')
-    assert_img_type(img)
-    return img
-
-
-def align_img(img_name: str):
-    im_arr = read_img(img_name)
-    pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-    if path.exists(pickle_name):
-        points = pickle.load(open(pickle_name, "rb"))
-    else:
-        print("Please select the eyes for alignment.")
-        points = get_points(im_arr, 2)
-        pickle_name = re.split("\.", img_name)[0] + "_align" + ".p"
-        save_points(pickle_name, points)
-    aligned_img_name = re.split("\.", img_name)[0] + "_align" + ".jpg"
-    print('max', im_arr.max())
-    aligned_im_arr = align(im_arr, points)
-    assert_img_type(aligned_im_arr)
-    io.imsave(
-        aligned_img_name,
-        img_as_ubyte(aligned_im_arr),
-        format="jpg",
-    )
-    assert_img_type(aligned_im_arr)
-    return aligned_im_arr
     
 def match_img_size(im1:np.ndarray, im2:np.ndarray):
     # Make images the same size
@@ -207,18 +196,5 @@ def match_img_size(im1:np.ndarray, im2:np.ndarray):
         im2 = im2[:, int(np.floor((w2 - w1) / 2.0)) : -int(np.ceil((w2 - w1) / 2.0)), :]
     elif w1 > w2:
         im1 = im1[:, int(np.floor((w1 - w2) / 2.0)) : -int(np.ceil((w1 - w2) / 2.0)), :]
-    print("image shapes: ", im1.shape, im2.shape)
     assert im1.shape == im2.shape
     return im1, im2
-
-
-def shape_vector_exist(image_name):
-    return path.exists(re.split("\.", image_name)[0] + ".p")
-
-
-def define_shape_vector(img_name: str):
-    im_arr = read_img(img_name)
-    pickle_name = re.split("\.", img_name)[0] + ".p"
-    if not path.exists(pickle_name):
-        points = utils.get_points(img_name, NUM_POINTS)
-        save_points(pickle_name, points)

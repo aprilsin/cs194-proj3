@@ -18,6 +18,15 @@ import utils
 NUM_FRAMES = 10
 
 #######################
+#    DEFINE SHAPES    #
+#######################
+
+def define_shape_vector(img: ToArray) -> np.ndArray:
+    img = to_arr(img)
+    points = utils.pick_points(img, NUM_POINTS)
+    return points
+    
+#######################
 #   TRIANGULATIONS    #
 #######################
 
