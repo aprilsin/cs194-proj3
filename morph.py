@@ -184,7 +184,7 @@ def compute_morph_video(
 
     for i, alpha in enumerate(alphas, start=1):
         start = time.time()
-        curr_frame = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
+        curr_frame, _ = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
         print(f"Frame {i} morph time with alpha {alpha}:", time.time() - start)
         frames.append(curr_frame)
         # im = plt.imshow(curr_frame)
@@ -201,6 +201,7 @@ def compute_morph_video(
     writer = animation.FFMpegWriter(fps=fps, metadata=metadata, bitrate=1800)
     with writer.saving(fig, outfile=out_path, dpi=100):
         for frame in frames:
+            assert_img_type(frame)
             plt.imshow(frame)
             writer.grab_frame()
     return frames
