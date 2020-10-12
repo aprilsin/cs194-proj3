@@ -3,25 +3,22 @@ from my_types import *
 
 
 def compute_population_mean(
-    population_imgs: np.ndarray, population_pts: np.ndarray
+    population_imgs: Sequence[ToImgArray], population_pts: Sequence[ToPoints]
 ) -> np.ndarray:
-    assert len(population_imgs) == len(population_pts)
-    assert all(assert_img_type(img) for img in population_imgs)
 
-    mean_img = population_imgs[0]
-    # FIXME
+    assert len(population_imgs) == len(population_pts)
+    population_imgs = [to_img_arr(img) for img in population_imgs]
+    population_pts = [to_points(pts) for pts in population_pts]
+
+    mean_img = np.zeros_like(population_imgs[0])
+    num_imgs = len(population_imgs)
+    alpha = 1 / num_imgs
+    for img in population_imgs:
+        mean_img += alpha * img
     mean_pts = np.mean(population_pts, axis=0)
     assert_points(mean_pts)
+    assert_img_type(mean_img)
     return mean_img
-
-
-def load_points_from_asf(file_name):
-    points = np.genfromtxt(file_name)
-    points.append([0.0, 0.0])
-    points.append([1.0, 0.0])
-    points.append([0.0, 1.0])
-    points.append([1.0, 1.0])
-    return np.array(points)
 
 
 def caricature(img, mean_img, img_pts, mean_pts):

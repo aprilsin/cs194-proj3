@@ -20,8 +20,52 @@ from constants import *
 from my_types import *
 
 #######################
-#      Alignment      #
+#   INPUT AND OUPUT   #
 #######################
+
+
+def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
+    """
+    Returns an array of points for one image with ginput
+    """
+    img = to_img_arr(img)
+    print(f"Please select {num_pts} points in image.")
+    plt.imshow(img)
+    points = plt.ginput(num_pts, timeout=0)
+    plt.close()
+
+    if APPEND_CORNERS:
+        points.extend(
+            [(0, 0), (0, img.shape[1]), (img.shape[0], 0), (img.shape[0], img.shape[1])]
+        )
+    print(f"Picked {num_pts} points successfully.")
+    return np.array(points)
+
+
+def save_points(points: np.ndarray, name: os.PathLike) -> None:
+    """
+    Saves points as Pickle
+    """
+    name = Path(name)
+    pickle_name = name.with_suffix(".pkl")
+    pickle.dump(points, open(pickle_name, "wb"))
+
+
+def load_points(name: os.PathLike) -> np.ndarray:
+    """
+    Loads an array of points saved as Pickle
+    """
+    name = Path(name)
+    pickle_name = name.with_suffix(".pkl")
+    return pickle.load(open(pickle_name, "rb"))
+
+
+
+
+
+#######################
+#      Alignment      #
+#######################„
 
 
 def find_centers(p1, p2) -> Tuple[int, int]:
@@ -33,6 +77,8 @@ def find_centers(p1, p2) -> Tuple[int, int]:
 def align_img(
     img: ToImgArray,
     points: Optional[ToImgArray] = None,
+    left_idx=0,
+    right_idx=0,
     target_h=DEFAULT_HEIGHT,
     target_w=DEFAULT_WIDTH,
 ) -> np.ndarray:
@@ -42,8 +88,9 @@ def align_img(
         print("Please select the eyes for alignment.")
         points = pick_points(img, 2)
     points = to_points(points)
-    left_eye, right_eye = points[0], points[1]
-    print(left_eye, right_eye)
+    left_eye, right_eye = points[left_idx], points[right_idx]
+    print("eye coordinates:", left_eye, right_eye)
+
     # rescale
     actual_eye_len = np.sqrt(
         (right_eye[1] - left_eye[1]) ** 2 + (right_eye[0] - left_eye[0]) ** 2
@@ -54,6 +101,7 @@ def align_img(
 
     if diff > 0.2:
         assert not np.isnan(img).any()
+        print(f"scaling by {scale}")
         scaled = transform.rescale(
             img,
             scale=scale,
@@ -111,47 +159,6 @@ def align_img(
     assert aligned.shape[0] == DEFAULT_HEIGHT and aligned.shape[1] == DEFAULT_WIDTH
     assert_img_type(aligned)
     return aligned, points
-
-
-#######################
-#   INPUT AND OUPUT   #
-#######################
-
-
-def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
-    """
-    Returns an array of points for one image with ginput
-    """
-    img = to_img_arr(img)
-    print(f"Please select {num_pts} points in image.")
-    plt.imshow(img)
-    points = plt.ginput(num_pts, timeout=0)
-    plt.close()
-
-    if APPEND_CORNERS:
-        points.extend(
-            [(0, 0), (0, img.shape[1]), (img.shape[0], 0), (img.shape[0], img.shape[1])]
-        )
-    print(f"Picked {num_pts} points successfully.")
-    return np.array(points)
-
-
-def save_points(points: np.ndarray, name: os.PathLike) -> None:
-    """
-    Saves points as Pickle
-    """
-    name = Path(name)
-    pickle_name = name.with_suffix(".pkl")
-    pickle.dump(points, open(pickle_name, "wb"))
-
-
-def load_points(name: os.PathLike) -> np.ndarray:
-    """
-    Loads an array of points saved as Pickle
-    """
-    name = Path(name)
-    pickle_name = name.with_suffix(".pkl")
-    return pickle.load(open(pickle_name, "rb"))
 
 
 def match_img_size(im1: np.ndarray, im2: np.ndarray):
