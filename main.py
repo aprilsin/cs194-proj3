@@ -3,8 +3,8 @@ import math
 import pickle
 import re
 import sys
-from pathlib import Path
 from os import path
+from pathlib import Path
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -75,9 +75,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if not (
-        args.method == "Middle"
-        or args.method == "Video"
-        or args.method == "Population"
+        args.method == "Middle" or args.method == "Video" or args.method == "Population"
     ):
         print("Invalid method!")
         exit()

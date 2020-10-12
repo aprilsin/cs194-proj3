@@ -1,11 +1,11 @@
 import argparse
 import math
+import os
 import pickle
 import re
 import sys
 from pathlib import Path
-import os
-from typing import Tuple, Union, Optional
+from typing import Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,17 +21,18 @@ DEFAULT_WIDTH = 547
 DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
 PAD_MODE = "edge"
 
-        
-        
+
 ToImgArray = Union[os.PathLike, np.ndarray]
 ZeroOneFloatArray = np.ndarray
 UbyteArray = np.ndarray
 
-def to_img_arr(x:ToImgArray)-> np.ndarray:
-    if isinstance(x, np.ndarray): return img_as_float(x).clip(0, 1)
-    elif isinstance(x, (str,Path,os.PathLike)):
+
+def to_img_arr(x: ToImgArray) -> np.ndarray:
+    if isinstance(x, np.ndarray):
+        return img_as_float(x).clip(0, 1)
+    elif isinstance(x, (str, Path, os.PathLike)):
         x = Path(x)
-        if x.suffix in ('.jpeg', '.jpg'):
+        if x.suffix in (".jpeg", ".jpg"):
             img = io.imread(x)
             img = img_as_float(img)
             assert_img_type(img)
@@ -39,29 +40,37 @@ def to_img_arr(x:ToImgArray)-> np.ndarray:
         else:
             raise ValueError(f"Didn't expect type {type(x)}")
 
+
 ToPoints = Union[os.PathLike, np.ndarray]
-def to_points(x:ToPoints)-> np.ndarray:
-    if isinstance(x, np.ndarray): return x
-    elif isinstance(x, (str,Path,os.PathLike)):
+
+
+def to_points(x: ToPoints) -> np.ndarray:
+    if isinstance(x, np.ndarray):
+        return x
+    elif isinstance(x, (str, Path, os.PathLike)):
         x = Path(x)
-        if x.suffix in ('.pkl', '.p'):
+        if x.suffix in (".pkl", ".p"):
             return pickle.load(open(x, "rb"))
         else:
             raise ValueError(f"Didn't expect type {type(x)}")
 
-            
+
 #######################
 #      Alignment      #
 #######################
 
 
-def find_centers(p1, p2)   -> Tuple[int, int]:
+def find_centers(p1, p2) -> Tuple[int, int]:
     cx = int(np.round(np.mean([p1[0], p2[0]])))
     cy = int(np.round(np.mean([p1[1], p2[1]])))
     return cx, cy
 
+
 def align_img(
-    img: ToImgArray, points: Optional[ToImgArray]=None, target_h=DEFAULT_HEIGHT, target_w=DEFAULT_WIDTH
+    img: ToImgArray,
+    points: Optional[ToImgArray] = None,
+    target_h=DEFAULT_HEIGHT,
+    target_w=DEFAULT_WIDTH,
 ) -> np.ndarray:
 
     img = to_img_arr(img)
@@ -78,7 +87,7 @@ def align_img(
     diff = abs(actual_eye_len - DEFAULT_EYE_LEN) / DEFAULT_EYE_LEN
     print(actual_eye_len)
     scale = DEFAULT_EYE_LEN / actual_eye_len
-    
+
     if diff > 0.2:
         assert not np.isnan(img).any()
         scaled = transform.rescale(
@@ -91,7 +100,7 @@ def align_img(
     else:
         scaled = img
     assert_img_type(scaled)
-    
+
     # do crop
     scaled_h, scaled_w = scaled.shape[0], scaled.shape[1]
     col_center, row_center = find_centers(left_eye * scale, right_eye * scale)
@@ -145,9 +154,11 @@ def assert_img_type(img: np.ndarray) -> None:
     assert img.dtype == "float64", img.dtype
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
 
+
 #######################
 #   INPUT AND OUPUT   #
 #######################
+
 
 def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarray:
     """
@@ -160,16 +171,19 @@ def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarra
     plt.close()
 
     if APPEND_CORNERS:
-        points.extend([(0, 0),(0, img.shape[1]),(img.shape[0], 0),(img.shape[0], img.shape[1])])
+        points.extend(
+            [(0, 0), (0, img.shape[1]), (img.shape[0], 0), (img.shape[0], img.shape[1])]
+        )
     print(f"Picked {num_pts} points successfully.")
     return np.array(points)
+
 
 def save_points(points: np.ndarray, name: os.PathLike) -> None:
     """
     Saves points as Pickle
     """
     name = Path(name)
-    pickle_name = name.with_suffix('.pkl')
+    pickle_name = name.with_suffix(".pkl")
     pickle.dump(points, open(pickle_name, "wb"))
 
 
@@ -177,17 +191,17 @@ def load_points(name: os.PathLike) -> np.ndarray:
     """
     Loads an array of points saved as Pickle
     """
-    name=Path(name)
-    pickle_name = name.with_suffix('.pkl')
+    name = Path(name)
+    pickle_name = name.with_suffix(".pkl")
     return pickle.load(open(pickle_name, "rb"))
 
-    
-def match_img_size(im1:np.ndarray, im2:np.ndarray):
+
+def match_img_size(im1: np.ndarray, im2: np.ndarray):
     # Make images the same size
     h1, w1, c1 = im1.shape
     h2, w2, c2 = im2.shape
     assert c1 == c2
-    
+
     if h1 < h2:
         im2 = im2[int(np.floor((h2 - h1) / 2.0)) : -int(np.ceil((h2 - h1) / 2.0)), :, :]
     elif h1 > h2:

@@ -2,7 +2,7 @@
 
 import math
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,19 +16,18 @@ from skimage.util import img_as_float, img_as_ubyte
 import utils
 
 NUM_FRAMES = 10
+NUM_POINTS = 41
+ToImgArray = Union[Path, np.ndarray]
 
 #######################
 #    DEFINE SHAPES    #
 #######################
 
-def define_shape_vector(img: ToArray) -> np.ndArray:
-    img = to_arr(img)
+
+def define_shape_vector(img: ToImgArray) -> np.ndarray:
+    img = utils.to_img_arr(img)
     points = utils.pick_points(img, NUM_POINTS)
     return points
-    
-#######################
-#   TRIANGULATIONS    #
-#######################
 
 
 def avg_points(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha=0.5) -> np.ndarray:
@@ -36,10 +35,10 @@ def avg_points(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha=0.5) -> np.ndarra
     Compute the (weighted) average points of correspondence
     """
     assert len(im1_pts) == len(im2_pts)
-    final_points = []
+    avg_pts = []
     for i in range(len(im1_pts)):
-        final_points.append((alpha * im1_pts[i] + (1 - alpha) * im2_pts[i]))
-    return np.array(final_points)
+        avg_pts.append((alpha * im1_pts[i] + (1 - alpha) * im2_pts[i]))
+    return np.array(avg_pts)
 
 
 def delaunay(points):
@@ -55,12 +54,19 @@ def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
     plt.plot(points[:, 0], points[:, 1], "o")
     plt.show()
 
+
+###############################
+#   WARP AND CROSS DISSOLVE   #
+###############################
+
+
 def get_triangle_pixels(img, triangle_vertices: np.ndarray):
     """ Returns the coordinates of pixels within triangle for an image """
     rr, cc = sk.draw.polygon(
         triangle_vertices[:, 0], triangle_vertices[:, 1], shape=img.shape
     )
     return rr, cc
+
 
 def create_triangle_mask(img, triangle_vertices: np.ndarray) -> np.ndarray:
     assert triangle_vertices.shape == (3, 2)  # three points, each with x y coordinates
@@ -71,20 +77,15 @@ def create_triangle_mask(img, triangle_vertices: np.ndarray) -> np.ndarray:
     utils.check_img_type(mask)
     return mask
 
-#######################
-#   TRANSFORMATIONS   #
-#######################
 
-def get_affine_mat(
-    start: list, target: list
-) -> np.ndarray:
-    
+def get_affine_mat(start: list, target: list) -> np.ndarray:
     # A*T = B
     # T = A-1 * B
     # return invA * B
-    A = np.array([start[:,0], start[:, 1], [1, 1, 1]])
-    B = np.array([target[:,0], target[:, 1], [1, 1, 1]])
+    A = np.array([start[:, 0], start[:, 1], [1, 1, 1]])
+    B = np.array([target[:, 0], target[:, 1], [1, 1, 1]])
     return np.linalg.inv(A) * B
+
 
 def inverse_affine(img, affine_mat, transformed_coordinates):
     """ Returns the values of pixels from original image. """
@@ -99,17 +100,21 @@ def warp_img(
 ):
     for triangle in triangulation.simplices:
         mask = create_triangle_mask(img, img_pts[triangle])
-
         pixels = inverse_affine()
         pass
+
 
 def cross_dissolve():
     pass
 
 
-def compute_middle_object():
-    # for each timeframe
-    pass
+def compute_middle_object(im1, im2, im1_pts, im2_pts, alpha=0.5):
+    mid_pts = avg_points(im1_pts, im2_pts, alpha)
+    triangulation = delaunay(mid_pts)
+    im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
+    im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
+    final_img = cross_dissolve(im1_warped, im2_warped)
+
 
 def compute_morph_video():
     # for each timeframe
