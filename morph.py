@@ -131,9 +131,10 @@ def warp_img(
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
-        print(max(target_rr), max(target_cc))
-        print(max(src_rr), max(src_cc))
+        # src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
+        src_rr, src_cc = np.int32(src_rr - 5), np.int32(src_cc - 5)
+        # print(max(target_rr), max(target_cc))
+        # print(max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
     return warped
 
