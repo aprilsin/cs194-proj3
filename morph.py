@@ -28,7 +28,7 @@ def define_shape_vector(img: ToImgArray) -> np.ndarray:
     return points
 
 
-def avg_points(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha=0.5) -> np.ndarray:
+def weighted_avg(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha=0.5) -> np.ndarray:
     """
     Compute the (weighted) average points of correspondence
     """
@@ -133,25 +133,32 @@ def cross_dissolve(warped_im1, warped_im2, alpha=0.5):
 
     result = np.zeros_like(warped_im1)
     for channel in range(utils.NUM_CHANNELS):
-        result[:, :, channel] = avg_points(warped_im1, warped_im2)
+        result[:, :, channel] = weighted_avg(warped_im1, warped_im2)
     return result
 
 
 def compute_middle_object(im1, im2, im1_pts, im2_pts, alpha=0.5):
-    mid_pts = avg_points(im1_pts, im2_pts, alpha)
+    mid_pts = weighted_avg(im1_pts, im2_pts, alpha)
     triangulation = delaunay(mid_pts)
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
     # final_img = cross_dissolve(im1_warped, im2_warped)
     return im1_warped
 
-import time, copy
+
+import copy
+import time
+
 from matplotlib import animation
-def compute_morph_video(im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRAMES, boomerang=True):
+
+
+def compute_morph_video(
+    im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRAMES, boomerang=True
+):
     # for each timeframe
     frames = []
     fig = plt.figure(frameon=False)
-    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
     ax.set_axis_off()
     fig.add_axes(ax)
     for i in range(num_frames):
@@ -171,9 +178,11 @@ def compute_morph_video(im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRA
     # create video from frames
     h, w, c = im1.shape
     ratio = w / h
-    fig.set_size_inches(int(h/50), int(w/50), 10)
-    ani = animation.ArtistAnimation(fig, frames, interval=1000, blit=True, repeat_delay=0)
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=10, metadata=dict(artist='Me'), bitrate=1800)
+    fig.set_size_inches(int(h / 50), int(w / 50), 10)
+    ani = animation.ArtistAnimation(
+        fig, frames, interval=1000, blit=True, repeat_delay=0
+    )
+    Writer = animation.writers["ffmpeg"]
+    writer = Writer(fps=10, metadata=dict(artist="Me"), bitrate=1800)
     ani.save(out_path, writer=writer)
     return frames

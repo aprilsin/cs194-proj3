@@ -1,5 +1,6 @@
-from my_types import *
 import morph
+from my_types import *
+
 
 def compute_population_mean(population_imgs: np.ndarray, population_pts: np.ndarray) ->np.ndarray:
     assert len(population_imgs) == len(population_pts)

@@ -19,7 +19,6 @@ from skimage.util import img_as_float, img_as_ubyte
 from constants import *
 from my_types import *
 
-
 #######################
 #      Alignment      #
 #######################

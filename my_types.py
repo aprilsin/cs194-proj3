@@ -1,11 +1,11 @@
 import os
+import pickle
 from pathlib import Path
 from typing import Union
-import pickle
-import skimage.io as io
-from skimage.util import img_as_float
 
 import numpy as np
+import skimage.io as io
+from skimage.util import img_as_float
 
 ToImgArray = Union[os.PathLike, np.ndarray]
 ZeroOneFloatArray = np.ndarray
