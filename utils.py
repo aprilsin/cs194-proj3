@@ -16,6 +16,7 @@ from scipy.spatial import Delaunay
 from skimage import transform
 from skimage.util import img_as_float, img_as_ubyte
 
+NUM_CHANNELS = 3
 DEFAULT_HEIGHT = 575
 DEFAULT_WIDTH = 547
 DEFAULT_EYE_LEN = DEFAULT_WIDTH * 0.25
@@ -153,6 +154,7 @@ def assert_img_type(img: np.ndarray) -> None:
     """ Check image data type """
     assert img.dtype == "float64", img.dtype
     assert np.max(img) <= 1.0 and np.min(img) >= 0.0, (np.min(img), np.max(img))
+    assert np.ndim(img) == 3
 
 
 #######################
@@ -167,7 +169,7 @@ def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarra
     img = to_img_arr(img)
     print(f"Please select {num_pts} points in image.")
     plt.imshow(img)
-    points = plt.ginput(num_pts)
+    points = plt.ginput(num_pts, timeout=0)
     plt.close()
 
     if APPEND_CORNERS:
