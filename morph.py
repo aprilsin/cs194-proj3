@@ -60,14 +60,13 @@ def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
 
 
 def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
-    # A*T = B
-    # T = A-1 * B
-    # return invA * B
+    # B = T * A
+    # T = B * A^-1
     assert_is_triangle(start)
     assert_is_triangle(target)
     A = np.vstack((start[:, 0], start[:, 1], [1, 1, 1]))
     B = np.vstack((target[:, 0], target[:, 1], [1, 1, 1]))
-    return np.linalg.inv(A) * B
+    return B @ np.linalg.inv(A)
 
 
 def get_triangle_pixels(
@@ -131,17 +130,8 @@ def warp_img(
 
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
-        print("target", max(target_rr), max(target_cc))
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        # sort rr and cc
-        # stacked = np.stack([rr, cc], axis=-1)
-        # stacked = stacked[stacked[:, 0].argsort()]
-        # rr, cc = stacked[:, 0], stacked[:, 1]
-        # print(rr)
         src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
-        print(max(src_rr), max(src_cc))
-        # interp_func = interpolate.interp2d(rr, cc, img)
-        # warped[rr, cc] = interp_func(rr, cc, grid=False)
         warped[target_rr, target_cc] = img[src_rr, src_cc]
     return warped
 
