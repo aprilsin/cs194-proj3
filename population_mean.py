@@ -54,5 +54,5 @@ def caricature(img, mean_img, img_pts, mean_pts):
     assert_points(mean_pts)
 
     unique_qualities = img_pts - mean_pts
-    warp_
-    return img + unique_qualities
+    cari_pts = img_pts + unique_qualities
+    return morph.warp_img(img, img_pts, cari_pts)

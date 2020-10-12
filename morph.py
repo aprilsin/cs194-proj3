@@ -114,12 +114,12 @@ def warp_img(
     img_pts: np.ndarray,
     target_pts: np.ndarray,
     triangulation: Delaunay,
-):
+)->np.ndarray:
     assert_img_type(img)
     assert_points(img_pts)
     assert_points(target_pts)
 
-    warped = np.zeros_like(img, dtype="float64")
+    warped = np.zeros_like(img)
     # num_triangles, _, _ = triangulation.simplices
     for simplex in triangulation.simplices:
 
@@ -131,24 +131,10 @@ def warp_img(
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        for r in src_rr:
-            r = math.floor(r)
-        for c in src_cc:
-            c = math.floor(c)
-        # src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
-        # print(type(target_rr), type(src_cc))
-        print(len(target_rr), len(target_cc))
-        print(len(src_rr), len(src_cc))
-        assert (isinstance(r, int) and isinstance(c, int) for r, c in target_rr)
-        print("asserted")
-        # assert (isinstance(r, int) for r, c in src_rr)
-        # assert (isinstance(r, int) for r in src_rr)
-        # assert (isinstance(r, int) for r in src_rr)
-        # img = img_as_ubyte(img)
+        src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
+        print(max(target_rr), max(target_cc))
+        print(max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
-        # img = img_as_float
-    # warped = img_as_float(img)
-    assert_img_type(warped)
     return warped
 
 
@@ -168,9 +154,7 @@ def compute_middle_object(
 
     mid_pts = weighted_avg(im1_pts, im2_pts, alpha=alpha)
     triangulation = delaunay(mid_pts)
-    print("warp im1")
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
-    print("warp im2")
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
     middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
     return middle_img, triangulation
@@ -200,7 +184,7 @@ def compute_morph_video(
 
     for i, alpha in enumerate(alphas, start=1):
         start = time.time()
-        curr_frame, _ = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
+        curr_frame = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
         print(f"Frame {i} morph time with alpha {alpha}:", time.time() - start)
         frames.append(curr_frame)
         # im = plt.imshow(curr_frame)
@@ -217,7 +201,6 @@ def compute_morph_video(
     writer = animation.FFMpegWriter(fps=fps, metadata=metadata, bitrate=1800)
     with writer.saving(fig, outfile=out_path, dpi=100):
         for frame in frames:
-            assert_img_type(frame)
             plt.imshow(frame)
             writer.grab_frame()
     return frames
