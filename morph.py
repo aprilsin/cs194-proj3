@@ -28,11 +28,11 @@ def define_shape_vector(img: ToImgArray) -> np.ndarray:
     return points
 
 
-def weighted_avg(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha=0.5) -> np.ndarray:
+def weighted_avg(im1_pts: np.ndarray, im2_pts: np.ndarray, alpha) -> np.ndarray:
     """
     Compute the (weighted) average points of correspondence
     """
-    assert len(im1_pts) == len(im2_pts)
+    assert len(im1_pts) == len(im2_pts), (len(im1_pts), len(im2_pts))
     return alpha * im1_pts + (1 - alpha) * im2_pts
 
 
@@ -136,26 +136,26 @@ def warp_img(
     return warped
 
 
-def cross_dissolve(warped_im1, warped_im2, alpha=0.5):
+def cross_dissolve(warped_im1, warped_im2, alpha):
     assert_img_type(warped_im1)
     assert_img_type(warped_im2)
-    return weighted_avg(warped_im1, warped_im2)
+    return weighted_avg(warped_im1, warped_im2, alpha=alpha)
 
 
 def compute_middle_object(
-    im1: ToImgArray, im2: ToImgArray, im1_pts: ToPoints, im2_pts: ToPoints, alpha=0.5
+    im1: ToImgArray, im2: ToImgArray, im1_pts: ToPoints, im2_pts: ToPoints, alpha
 ):
     im1 = to_img_arr(im1)
     im2 = to_img_arr(im2)
     im1_pts = to_points(im1_pts)
     im2_pts = to_points(im2_pts)
 
-    mid_pts = weighted_avg(im1_pts, im2_pts, alpha)
+    mid_pts = weighted_avg(im1_pts, im2_pts, alpha=alpha)
     triangulation = delaunay(mid_pts)
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
-    middle_img = cross_dissolve(im1_warped, im2_warped)
-    return middle_img
+    middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
+    return middle_img, triangulation
 
 
 import copy
@@ -165,7 +165,7 @@ from matplotlib import animation
 
 
 def compute_morph_video(
-    im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRAMES, boomerang=True
+    im1, im2, im1_pts, im2_pts, out_path, num_frames=NUM_FRAMES, fps=10, boomerang=True
 ):
     im1 = to_img_arr(im1)
     im2 = to_img_arr(im2)
@@ -178,28 +178,27 @@ def compute_morph_video(
     ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
     ax.set_axis_off()
     fig.add_axes(ax)
-    for i in range(num_frames):
-        alpha = 1 / num_frames * i
-        strt = time.time()
-        curr_frame = compute_middle_object(im1, im2, im1_pt2, im2_pts, alpha)
-        print("Frame morph time:", time.time() - strt)
-        frames.append()
+    alphas = np.linspace(0, 1, num_frames)
+
+    for i, alpha in enumerate(alphas, start=1):
+        start = time.time()
+        curr_frame = compute_middle_object(im1, im2, im1_pts, im2_pts, 1 - alpha)
+        print(f"Frame {i} morph time with alpha {alpha}:", time.time() - start)
+        frames.append(curr_frame)
         # im = plt.imshow(curr_frame)
         # mov.append([im])
 
     if boomerang:
-        reversed_frames = copy.copy(frames)
+        reversed_frames = copy.deepcopy(frames)
         reversed_frames.reverse()
         frames += reversed_frames
 
     # create video from frames
-    h, w, c = im1.shape
-    ratio = w / h
-    fig.set_size_inches(int(h / 50), int(w / 50), 10)
-    ani = animation.ArtistAnimation(
-        fig, frames, interval=1000, blit=True, repeat_delay=0
-    )
-    Writer = animation.writers["ffmpeg"]
-    writer = Writer(fps=10, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(out_path, writer=writer)
+
+    metadata = {"title": "Morph Video", "artist": "Me = April Sin"}
+    writer = animation.FFMpegWriter(fps=fps, metadata=metadata, bitrate=1800)
+    with writer.saving(fig, outfile=out_path, dpi=100):
+        for frame in frames:
+            plt.imshow(frame)
+            writer.grab_frame()
     return frames
