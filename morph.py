@@ -138,12 +138,14 @@ def warp_img(
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
         # src_rr, src_cc = np.int32(np.floor(src_rr) - 1), np.int32(np.floor(src_cc) - 10)
         # XXX you have to use floor before casting to int since int can *round up*
-        src_rr, src_cc = ifloor(src_rr) - 5, ifloor(src_cc) - 5
-        print(src_cc.shape, src_cc)
-        warped[:, target_cc]
-        warped[src_cc, :]
-        img[:, src_cc]
-        img[src_rr, :]
+        # src_rr, src_cc = ifloor(src_rr) - 5, ifloor(src_cc) - 5
+        # print(src_cc.shape, src_cc)
+        # warped[:, target_cc]
+        # warped[src_cc, :]
+        # img[:, src_cc]
+        # img[src_rr, :]
+        src_rr, src_cc = np.int32(src_rr), np.int32(src_cc)
+        warped[target_rr, target_cc] = img[src_rr, src_cc]
     return warped
 
 
