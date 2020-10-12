@@ -143,7 +143,7 @@ def warp_img(
         )
         # print(max(target_rr), max(target_cc), max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
-    return warped
+    return np.flip(transform.rotate(warped, -90), axis=1)
 
 
 def cross_dissolve(warped_im1, warped_im2, alpha):
@@ -165,7 +165,7 @@ def compute_middle_object(
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
     middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
-    middle_img = transform.rotate(middle_img, -90)
+    # middle_img = transform.rotate(middle_img, -90)
     return middle_img, mid_pts, triangulation
 
 
