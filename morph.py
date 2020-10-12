@@ -145,7 +145,35 @@ def compute_middle_object(im1, im2, im1_pts, im2_pts, alpha=0.5):
     # final_img = cross_dissolve(im1_warped, im2_warped)
     return im1_warped
 
-
-def compute_morph_video():
+import time, copy
+from matplotlib import animation
+def compute_morph_video(im1, im2, im1_pt2, im2_pts, out_path, num_frames=NUM_FRAMES, boomerang=True):
     # for each timeframe
-    pass
+    frames = []
+    fig = plt.figure(frameon=False)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    for i in range(num_frames):
+        alpha = 1 / num_frames * i
+        strt = time.time()
+        curr_frame = compute_middle_object(im1, im2, im1_pt2, im2_pts, alpha)
+        print("Frame morph time:", time.time() - strt)
+        frames.append()
+        # im = plt.imshow(curr_frame)
+        # mov.append([im])
+
+    if boomerang:
+        reversed_frames = copy.copy(frames)
+        reversed_frames.reverse()
+        frames += reversed_frames
+
+    # create video from frames
+    h, w, c = im1.shape
+    ratio = w / h
+    fig.set_size_inches(int(h/50), int(w/50), 10)
+    ani = animation.ArtistAnimation(fig, frames, interval=1000, blit=True, repeat_delay=0)
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=10, metadata=dict(artist='Me'), bitrate=1800)
+    ani.save(out_path, writer=writer)
+    return frames
