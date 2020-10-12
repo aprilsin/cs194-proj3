@@ -139,11 +139,7 @@ def warp_img(
 def cross_dissolve(warped_im1, warped_im2, alpha=0.5):
     assert_img_type(warped_im1)
     assert_img_type(warped_im2)
-
-    result = np.zeros_like(warped_im1)
-    for channel in range(utils.NUM_CHANNELS):
-        result[:, :, channel] = weighted_avg(warped_im1, warped_im2)
-    return result
+    return weighted_avg(warped_im1, warped_im2)
 
 
 def compute_middle_object(
@@ -158,8 +154,8 @@ def compute_middle_object(
     triangulation = delaunay(mid_pts)
     im1_warped = warp_img(im1, im1_pts, mid_pts, triangulation)
     im2_warped = warp_img(im2, im2_pts, mid_pts, triangulation)
-    # final_img = cross_dissolve(im1_warped, im2_warped)
-    return im1_warped
+    middle_img = cross_dissolve(im1_warped, im2_warped)
+    return middle_img
 
 
 import copy
