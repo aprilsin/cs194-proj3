@@ -42,7 +42,7 @@ def compute_population_mean(
             warped_imgs.append(w)
         except np.linalg.LinAlgError:
             continue
-    warped_imgs=np.stack(warped_imgs)
+    warped_imgs = np.stack(warped_imgs)
     alpha = 1 / len(warped_imgs)
     assert alpha >= 0 and alpha <= 1, alpha
 

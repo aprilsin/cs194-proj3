@@ -69,7 +69,6 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
         inv = np.linalg.inv(A)
     except:
         print(A)
-        # print(np.linalg.pinv(A))
         return
     B = np.vstack((target[:, 0], target[:, 1], [1, 1, 1]))
 
@@ -149,6 +148,7 @@ def warp_img(
         #     np.int32(src_cc).clip(0, w - 1),
         # )
         src_rr, src_cc = (ifloor(src_rr).clip(0, h - 1), ifloor(src_cc).clip(0, w - 1))
+        # src_rr, src_cc = (ifloor(src_rr), ifloor(src_cc))
         # print(max(target_rr), max(target_cc), max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
 
