@@ -23,7 +23,7 @@ def fix_pop_pts(points: np.ndarray) -> np.ndarray:
     # print(points.shape)
     with_corners = np.append(points, corners, axis=0)
     # print(with_corners.shape)
-    # points = np.flip(points, axis=1)
+    with_corners = np.flip(with_corners, axis=1)
     assert_points(with_corners)
     return with_corners
 
@@ -45,7 +45,7 @@ def compute_population_mean(
     assert len(imgs) == len(pts), (len(imgs), len(pts))
 
     mean_pts = np.mean(pts, axis=0)
-    print(mean_pts.min(), mean_pts.max(), mean_pts.shape)
+    # print(mean_pts.min(), mean_pts.max(), mean_pts.shape)
 
     triangulation = morph.delaunay(mean_pts)
     warped_imgs = []
