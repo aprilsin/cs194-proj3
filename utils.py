@@ -36,10 +36,26 @@ def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarra
 
     if APPEND_CORNERS:
         points.extend(
-            [(0, 0), (0, img.shape[1]), (img.shape[0], 0), (img.shape[0], img.shape[1])]
+            [
+                (0, 0),
+                (0, img.shape[1] - 1),
+                (img.shape[0] - 1, 0),
+                (img.shape[0] - 1, img.shape[1] - 1),
+            ]
         )
     print(f"Picked {num_pts} points successfully.")
     return np.array(points)
+
+
+# def add_corners(img, points:np.ndarray):
+#     points.extend(
+#         [
+#             (0, 0),
+#             (0, img.shape[1] - 1),
+#             (img.shape[0] - 1, 0),
+#             (img.shape[0] - 1, img.shape[1] - 1),
+#         ]
+#     )
 
 
 def save_points(points: np.ndarray, name: os.PathLike) -> None:
@@ -106,14 +122,21 @@ def find_centers(p1, p2) -> Tuple[int, int]:
     cc = int(np.round(np.mean([p1[1], p2[1]])))
     return cr, cc
 
+
 def recenter(im, r, c):
     R, C, _ = im.shape
-    rpad = (int) (np.abs(2*r+1 - R))
-    cpad = (int) (np.abs(2*c+1 - C))
+    rpad = (int)(np.abs(2 * r + 1 - R))
+    cpad = (int)(np.abs(2 * c + 1 - C))
     return np.pad(
-        im, [(0 if r > (R-1)/2 else rpad, 0 if r < (R-1)/2 else rpad),
-             (0 if c > (C-1)/2 else cpad, 0 if c < (C-1)/2 else cpad),
-             (0, 0)], 'constant')
+        im,
+        [
+            (0 if r > (R - 1) / 2 else rpad, 0 if r < (R - 1) / 2 else rpad),
+            (0 if c > (C - 1) / 2 else cpad, 0 if c < (C - 1) / 2 else cpad),
+            (0, 0),
+        ],
+        "constant",
+    )
+
 
 def align_img(
     img: ToImgArray,

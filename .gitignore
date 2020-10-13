@@ -1,6 +1,7 @@
 .ipynb_checkpoints/
 __pycache__/
 src_images/
+data/
 output/
 *.pyc
 *.mov
