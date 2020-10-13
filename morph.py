@@ -115,9 +115,6 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     return src_points[1, :], src_points[0, :]
 
 
-def ifloor(x: np.ndarray) -> np.ndarray:
-    """Avoid rounding up by taking floor before int so you can't index out of bounds."""
-    return np.int64(np.floor(x))
 
 
 def warp_img(
@@ -146,7 +143,7 @@ def warp_img(
         # assert not DEFAULT_HEIGHT in [max(target_rr), max(src_rr)]
         # assert not DEFAULT_WIDTH in [max(target_cc), max(src_cc)]
         
-        src_rr, src_cc = (ifloor(src_rr).clip(0, h - 1), ifloor(src_cc).clip(0, w - 1))
+        src_rr, src_cc = (utils.ifloor(src_rr).clip(0, h - 1), utils.ifloor(src_cc).clip(0, w - 1))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
 
     result = np.flip(transform.rotate(warped, -90), axis=1)

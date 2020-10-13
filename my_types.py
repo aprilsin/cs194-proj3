@@ -73,12 +73,20 @@ def assert_img_type(img: np.ndarray) -> bool:
 def assert_is_triangle(triangle: np.ndarray) -> bool:
     """ Check image data type """
     assert triangle.shape == (3, 2), triangle.shape
-    assert (triangle >= 0).all()
+    assert (triangle >= 0).all(), triangle
+    return True
+
+
+def assert_indices(indices: np.ndarray) -> bool:
+    assert isinstance(indices, np.ndarray)
+    assert indices.dtype == "int"
+    assert (indices >= 0).all()
+    assert indices.shape[1] == 2
     return True
 
 
 def assert_points(points: np.ndarray) -> bool:
     assert isinstance(points, np.ndarray)
-    assert (points >= 0).all()
     assert points.shape[1] == 2
+    assert (points >= 0).all()
     return True

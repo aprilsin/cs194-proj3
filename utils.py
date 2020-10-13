@@ -19,6 +19,17 @@ from skimage.util import img_as_float, img_as_ubyte
 from constants import *
 from my_types import *
 
+
+#######################
+#      FIX INDEX      #
+#######################
+
+
+def ifloor(x: np.ndarray) -> np.ndarray:
+    """Avoid rounding up by taking floor before int so you can't index out of bounds."""
+    return np.int64(np.floor(x))
+
+
 #######################
 #   INPUT AND OUPUT   #
 #######################

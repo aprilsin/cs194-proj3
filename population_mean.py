@@ -61,12 +61,27 @@ def compute_population_mean(
     return mean_img, mean_pts, triangulation, warped_imgs
 
 
-def caricature(img, mean_img, img_pts, mean_pts, alpha):
+def caricature(img, mean_img, img_pts, mean_pts, triangulation, alpha):
     assert_img_type(img)
     assert_img_type(mean_img)
     assert_points(img_pts)
     assert_points(mean_pts)
 
-    unique_qualities = img_pts - mean_pts
+    # print(mean_pts)
+    unique_qualities = (img_pts - mean_pts).clip(0, None)
+    # print(unique_qualities)
     cari_pts = img_pts + alpha * unique_qualities
-    return morph.warp_img(img, img_pts, cari_pts)
+    assert_points(cari_pts)
+
+    return morph.warp_img(img, utils.ifloor(img_pts), cari_pts, triangulation)
+
+
+def direct_avg(pop_imgs: Sequence[ToImgArray]) -> np.ndarray:
+    imgs = np.stack([to_img_arr(img) for img in pop_imgs])
+
+    alpha = 1 / len(imgs)
+    assert alpha >= 0 and alpha <= 1, alpha
+
+    mean_img = (alpha * imgs).sum(axis=0)
+    assert_img_type(mean_img)
+    return mean_img
