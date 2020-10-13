@@ -61,9 +61,8 @@ def compute_population_mean(
     return mean_img, mean_pts, triangulation, warped_imgs
 
 
-def caricature(img, mean_img, img_pts, mean_pts, triangulation, alpha):
+def caricature(img, img_pts, mean_pts, triangulation, alpha):
     assert_img_type(img)
-    assert_img_type(mean_img)
     assert_points(img_pts)
     assert_points(mean_pts)
 
