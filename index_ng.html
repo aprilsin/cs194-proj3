@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <title>CS 194-26 Fall 2020, Project 3: Face Morphing - HackMD</title>
+
+  <body>
+    <div
+      id="doc"
+      class="markdown-body container-fluid comment-inner comment-enabled"
+      data-hard-breaks="true"
+    >
+      <p><span>CS 194-26 Fall 2020, Project 3: Face Morphing - April Sin</span></p>
+      <h2 id="Table-of-Contents" data-id="Table-of-Contents">
+        <a
+          class="anchor hidden-xs"
+          href="#Table-of-Contents"
+          title="Table-of-Contents"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Table of Contents</span>
+      </h2>
+      <p>
+        <span class="toc"
+          ><ul>
+            <li>
+              <a href="#Table-of-Contents" title="Table of Contents"
+                >Table of Contents</a
+              >
+            </li>
+            <li>
+              <a href="#Project-Overview" title="Project Overview"
+                >Project Overview</a
+              >
+            </li>
+            <li>
+              <a href="#Morphing-Two-Images" title="Morphing Two Images"
+                >Morphing Two Images</a
+              >
+              <ul>
+                <li>
+                  <a href="#1-Alignment" title="1. Alignment">1. Alignment</a>
+                </li>
+                <li>
+                  <a
+                    href="#2-Compute-the-Middle-Object"
+                    title="2. Compute the Middle Object"
+                    >2. Compute the Middle Object</a
+                  >
+                </li>
+                <li>
+                  <a href="#3-Morphing-Sequence" title="3. Morphing Sequence"
+                    >3. Morphing Sequence</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a
+                href="#Computing-the-“mean”-face-of-a-population"
+                title="Computing the “mean” face of a population"
+                >Computing the “mean” face of a population</a
+              >
+            </li>
+            <li><a href="#Caricature" title="Caricature">Caricature</a></li>
+            <li>
+              <a href="#Bells-and-Whistles" title="Bells and Whistles"
+                >Bells and Whistles</a
+              >
+            </li>
+          </ul>
+        </span>
+      </p>
+      <h2 id="Project-Overview" data-id="Project-Overview">
+        <a
+          class="anchor hidden-xs"
+          href="#Project-Overview"
+          title="Project-Overview"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Project Overview</span>
+      </h2>
+      <p>
+        <span
+          >In this project we want to create a morphing between two faces,
+          compute the “mean” face of a population, and also do extrapolation to
+          get caricature results.</span
+        >
+      </p>
+      <h2 id="Morphing-Two-Images" data-id="Morphing-Two-Images">
+        <a
+          class="anchor hidden-xs"
+          href="#Morphing-Two-Images"
+          title="Morphing-Two-Images"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Morphing Two Images</span>
+      </h2>
+      <h3 id="1-Alignment" data-id="1-Alignment">
+        <a class="anchor hidden-xs" href="#1-Alignment" title="1-Alignment"
+          ><span class="octicon octicon-link"></span></a
+        ><span>1. Alignment</span>
+      </h3>
+      <p>
+        <span
+          >The first step to morphing two images it to align them so they are on
+          the same coordinate plane. Then we can pick points of correspondences
+          that makes sense.</span
+        >
+      </p>
+      <h3
+        id="2-Compute-the-Middle-Object"
+        data-id="2-Compute-the-Middle-Object"
+      >
+        <a
+          class="anchor hidden-xs"
+          href="#2-Compute-the-Middle-Object"
+          title="2-Compute-the-Middle-Object"
+          ><span class="octicon octicon-link"></span></a
+        ><span>2. Compute the Middle Object</span>
+      </h3>
+      <p>
+        <span
+          >Using the points of correspondences, we can the shape vector of the
+          middle image. And use that to calculate a common delaunay
+          triangulation that can be applied to both images.</span
+        >
+      </p>
+      <p>
+        <span
+          >Then, we compute the average colors of the images by averaging
+          values.</span
+        >
+      </p>
+      <p><span>Mathematically, it would be</span></p>
+      <pre><code>alpha * image1 + (1-alpha) * image2
+</code></pre>
+      <p><span>The middle image is the result when alpha = 0.5</span></p>
+      <table style="width:100%">
+		<tr>
+			<td>
+				<img src="./input/me.jpg">
+				<figcaption align=center>Aligned Picture of Me</figcaption>
+            </td>
+            <td>
+				<img src="./input/iu.jpg">
+                <figcaption align=center>Aligned Picture of I.U.</figcaption>
+            </td>
+            <td>
+                <img src="./output/middle.png">
+				<figcaption align=center>Middle Image</figcaption>
+			</td>
+		</tr>
+
+        </br>
+      <h3 id="3-Morphing-Sequence" data-id="3-Morphing-Sequence">
+        <a
+          class="anchor hidden-xs"
+          href="#3-Morphing-Sequence"
+          title="3-Morphing-Sequence"
+          ><span class="octicon octicon-link"></span></a
+        ><span>3. Morphing Sequence</span>
+      </h3>
+      <p>
+        <span
+          >To make this into a video, we just need to calculate the middle
+          objects of each frame. All we need to do is to variate alpha.</span
+        >
+      </p>
+      <p><span>INSERT VIDEO / GIF HERE</span></p>
+      <h2
+        id="Computing-the-“mean”-face-of-a-population"
+        data-id="Computing-the-“mean”-face-of-a-population"
+      >
+        <a
+          class="anchor hidden-xs"
+          href="#Computing-the-“mean”-face-of-a-population"
+          title="Computing-the-“mean”-face-of-a-population"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Computing the “mean” face of a population</span>
+      </h2>
+      <p>
+        <span
+          >To find the average face of a population, we apply the same logic. We
+          find the average shape by interpolating all shape vectors. Warp all
+          the individual images to the average shape. And combine the weighted
+          pixel values.</span
+        >
+      </p>
+      <h2 id="Caricature" data-id="Caricature">
+        <a class="anchor hidden-xs" href="#Caricature" title="Caricature"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Caricature</span>
+      </h2>
+      <p>
+        <span
+          >We can make our faces look more cartoon-like by extrapolating our
+          unique qualities. First, find the difference between my face’s shape
+          vector and the population mean’s shape vector. Then emphasize the
+          difference (i.e. my unique qualities) by adding it to the original
+          image of myself.</span
+        >
+      </p>
+
+      <h2 id="Bells-and-Whistles" data-id="Bells-and-Whistles">
+        <a
+          class="anchor hidden-xs"
+          href="#Bells-and-Whistles"
+          title="Bells-and-Whistles"
+          ><span class="octicon octicon-link"></span></a
+        ><span>Bells and Whistles</span>
+      </h2>
+      <p>
+        <span
+          >A group of students, including myself, have created a video of our
+          faces morphing to one another! Check this out.</span
+        >
+      </p>
+      <p><span>INSERT YOUTUBE LINK</span></p>
+  </body>
+</html>
