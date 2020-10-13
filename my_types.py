@@ -1,10 +1,12 @@
 import os
 import pickle
 from pathlib import Path
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 import skimage.io as io
 from skimage.util import img_as_float
+
 from constants import *
 
 ToImgArray = Union[os.PathLike, np.ndarray]

@@ -1,23 +1,20 @@
-import morph
 import numpy as np
-from my_types import *
+
+import morph
 import utils
-
-
-POP_HEIGHT = 480
-POP_WIDTH = 640
+from my_types import *
 
 
 def fix_pop_pts(points: np.ndarray) -> np.ndarray:
     assert_points(points)
-    points[:, 0] *= POP_HEIGHT  # rows -> height
-    points[:, 1] *= POP_WIDTH  # cols -> width
+    points[:, 0] *= DANES_HEIGHT  # rows -> height
+    points[:, 1] *= DANES_WIDTH  # cols -> width
     corners = np.array(
         [
             [0.0, 0.0],
-            [0.0, POP_WIDTH - 1.0],
-            [POP_HEIGHT - 1.0, 0.0],
-            [POP_HEIGHT - 1.0, POP_WIDTH - 1.0],
+            [0.0, DANES_WIDTH - 1.0],
+            [DANES_HEIGHT - 1.0, 0.0],
+            [DANES_HEIGHT - 1.0, DANES_WIDTH - 1.0],
         ]
     )
     # print(points.shape)

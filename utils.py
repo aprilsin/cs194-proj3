@@ -94,8 +94,8 @@ def load_points_from_asf(file_name, APPEND_CORNERS=True) -> np.ndarray:
         points.append((0.0, 1.0))
         points.append((1.0, 1.0))
     points = np.array(points)
-    points[:, 0] *= POP_WIDTH
-    points[:, 1] *= POP_HEIGHT
+    points[:, 0] *= DANES_WIDTH
+    points[:, 1] *= DANES_HEIGHT
 
     # points = np.genfromtxt(
     #     file_name,
