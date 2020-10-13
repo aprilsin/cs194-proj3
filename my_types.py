@@ -49,7 +49,9 @@ def to_points(x: ToPoints) -> np.ndarray:
             points = []
             for line in lines:
                 data = line.split(" \t")
-                points.append((float(data[2]), float(data[3])))
+                c = float(data[2])  # x coordinates = cols
+                r = float(data[3])  # y coordinates = rows
+                points.append((r, c))
             points = np.array(points)
             assert_points(points)
             return points
