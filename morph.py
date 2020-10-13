@@ -65,8 +65,15 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
     assert_is_triangle(start)
     assert_is_triangle(target)
     A = np.vstack((start[:, 0], start[:, 1], [1, 1, 1]))
+    try:
+        inv = np.linalg.inv(A)
+    except:
+        print(A)
+        # print(np.linalg.pinv(A))
+        return
     B = np.vstack((target[:, 0], target[:, 1], [1, 1, 1]))
-    return B @ np.linalg.inv(A)
+
+    return B @ inv
 
 
 def get_triangle_pixels(
@@ -88,7 +95,7 @@ def create_triangle_mask(
     assert_is_triangle(triangle_vertices)
 
     mask = np.zeros(shape, dtype=np.float)
-    rr, cc = get_triangle_pixels(triangle_vertices)
+    rr, cc = get_triangle_pixels(triangle_vertices, shape)
     mask[rr, cc] = 1.0
     utils.assert_img_type(mask)
     return mask
@@ -103,7 +110,7 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
     # inverse of affine is just the transpose
     inverse = np.linalg.inv(affine_mat)
-    rr, cc = get_triangle_pixels(target_triangle_vertices)
+    rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
     target_points = np.vstack([rr, cc, np.ones(len(rr))])
     src_points = inverse @ target_points
     return src_points[1, :], src_points[0, :]
@@ -123,7 +130,7 @@ def warp_img(
     assert_img_type(img)
     assert_points(img_pts)
     assert_points(target_pts)
-
+    h, w, c = img.shape
     warped = np.zeros_like(img)
     # num_triangles, _, _ = triangulation.simplices
     for simplex in triangulation.simplices:
@@ -137,13 +144,17 @@ def warp_img(
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
 
-        src_rr, src_cc = (
-            np.int32(src_rr).clip(0, DEFAULT_HEIGHT - 1),
-            np.int32(src_cc).clip(0, DEFAULT_WIDTH - 1),
-        )
+        # src_rr, src_cc = (
+        #     np.int32(src_rr).clip(0, h - 1),
+        #     np.int32(src_cc).clip(0, w - 1),
+        # )
+        src_rr, src_cc = (ifloor(src_rr).clip(0, h - 1), ifloor(src_cc).clip(0, w - 1))
         # print(max(target_rr), max(target_cc), max(src_rr), max(src_cc))
         warped[target_rr, target_cc] = img[src_rr, src_cc]
-    return np.flip(transform.rotate(warped, -90), axis=1)
+
+    result = np.flip(transform.rotate(warped, -90), axis=1)
+    assert_img_type(result)
+    return result
 
 
 def cross_dissolve(warped_im1, warped_im2, alpha):

@@ -1,8 +1,11 @@
 import morph
 import numpy as np
 from my_types import *
-from constants import POP_HEIGHT, POP_WIDTH
 import utils
+
+
+POP_HEIGHT = 480
+POP_WIDTH = 640
 
 
 def fix_pop_pts(points: np.ndarray) -> np.ndarray:
@@ -22,39 +25,30 @@ def pop_align(img, points, left_idx, right_idx):
 def compute_population_mean(
     pop_imgs: Sequence[ToImgArray], pop_pts: Sequence[ToPoints]
 ) -> np.ndarray:
+    imgs, pts = np.stack([to_img_arr(img) for img in pop_imgs]), np.stack(
+        [fix_pop_pts(to_points(p)) for p in pop_pts]
+    )
 
-    assert len(pop_imgs) == len(pop_pts)
-    for i, (img, pts) in enumerate(zip(pop_imgs, pop_pts)):
-        pop_pts[i] = fix_pop_pts(to_points(pts))
-        pop_imgs[i] = to_img_arr(img)
+    assert len(imgs) == len(pts), (len(imgs), len(pts))
 
-    # left = np.array([pt[19] for pt in pop_pts])  # shape [(2,)]
+    mean_shape = np.mean(pts, axis=0)
+    print(mean_shape.min(), mean_shape.max(), mean_shape.shape)
 
-    # right = np.array([pt[27] for pt in pop_pts])  # shape [(2,)]
+    triangulation = morph.delaunay(mean_shape)
+    warped_imgs = []
+    for img, pt in zip(imgs, pts):
+        try:
+            w = morph.warp_img(img, pt, mean_shape, triangulation)
+            warped_imgs.append(w)
+        except np.linalg.LinAlgError:
+            continue
+    warped_imgs=np.stack(warped_imgs)
+    alpha = 1 / len(warped_imgs)
+    assert alpha >= 0 and alpha <= 1, alpha
 
-    tmp = np.array([(l + r) / 2 for l, r in zip(left, right)])
-    cr, cc = tmp[:, 0], tmp[:, 1]
-
-    for img in pop_imgs:
-        # img = recenter(img, r, c)
-    #     img = pop_align(img, pts, left_idx=19, right_idx=27)
-    #     images.append(img)
-    #     points.append(pts)
-    # assert_img_type(images[0])
-    # mean_pts = np.mean(points, axis=0)
-    # triangulation = morph.delaunay(mean_pts)
-
-    # num_imgs = len(images)
-    # alpha = 1 / num_imgs
-
-    # mean_img = np.zeros_like(images[0])
-    # for img, pts in zip(images, points):
-    #     warped = morph.warp_img(img, pts, mean_pts, triangulation)
-    #     mean_img += alpha * warped
-
-    # assert_points(mean_pts)
-    # assert_img_type(mean_img)
-    # return mean_img, mean_pts, triangulation
+    mean_img = (alpha * warped_imgs).sum(axis=0)
+    assert_img_type(mean_img)
+    return mean_img, mean_shape, triangulation, warped_imgs
 
 
 def caricature(img, mean_img, img_pts, mean_pts, alpha):
