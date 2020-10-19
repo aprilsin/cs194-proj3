@@ -2,23 +2,26 @@
 
 <head>
 	<style>
-		h1{
+		h1 {
 			padding: 15px, 0px
 		}
+
 		h1,
 		h2,
 		h3,
 		h4 {
 			font-family: 'Source Sans Pro', sans-serif;
 		}
+
 		div {
 			text-align: center;
 		}
 
 		img {
 			width: 280px;
-            align: center;
+			align: center;
 		}
+
 		body {
 			padding: 100px;
 			width: 1000px;
@@ -36,161 +39,162 @@
 	<h1> Project Overview </h1>
 	<p>
 		In this project we want to create a morphing between two faces,
-          compute the “mean” face of a population, and also do extrapolation to
-          get caricature results.
-    </p>
+		compute the “mean” face of a population, and also do extrapolation to
+		get caricature results.
+	</p>
 	<h3> 1. Alignment </h3>
 	<p>
 		The first step to morphing two images it to align them so they are on
-          the same coordinate plane. Then we can pick points of correspondences
-          that makes sense</p>
+		the same coordinate plane. Then we can pick points of correspondences
+		that makes sense</p>
 
-		<h3> 2. Compute the Middle Object </h3>
+	<h3> 2. Compute the Middle Object </h3>
 
-		Using the points of correspondences, we can the shape vector of the
-          middle image. And use that to calculate a common delaunay
-          triangulation that can be applied to both images. </br></br>
-        Then, we compute the average colors of the images by averaging
-          values.</br>
+	Using the points of correspondences, we can the shape vector of the
+	middle image. And use that to calculate a common delaunay
+	triangulation that can be applied to both images. </br></br>
+	Then, we compute the average colors of the images by averaging
+	values.</br>
 	<p>
-        Mathematically, it would be
-        <br><code>alpha * image1 + (1-alpha) * image2
-</code></br>
-</br>
-      <table style="width:100%">
-		<tr>
-			<td>
-				<img src="./input/me.jpg">
-				<figcaption>Aligned Picture of Me</figcaption>
-            </td>
-            <td>
-				<img src="./input/iu.jpg">
-                <figcaption>Aligned Picture of I.U.</figcaption>
-            </td>
-		</tr>
-</table>
-      <table style="width:100%">
-		<tr>
-			<td>
-				<img src="./output/me_mesh.png">
-				<figcaption>Triangulation of Me</figcaption>
-            </td>
-            <td>
-				<img src="./output/iu_mesh.png">
-                <figcaption>Triangulation of I.U.</figcaption>
-            </td>
-		</tr>
-</table>
-<figure>
-            <img src="./output/middle.png">
-            <figcaption>Middle Image</figcaption>
-</figure>
+		Mathematically, it would be
+		<br><code>alpha * image1 + (1-alpha) * image2
+		</code></br>
+		</br>
+		<table style="width:100%">
+			<tr>
+				<td>
+					<img src="./input/me.jpg">
+					<figcaption>Aligned Picture of Me</figcaption>
+				</td>
+				<td>
+					<img src="./input/iu.jpg">
+					<figcaption>Aligned Picture of I.U.</figcaption>
+				</td>
+			</tr>
+		</table>
+		<table style="width:100%">
+			<tr>
+				<td>
+					<img src="./output/me_mesh.png">
+					<figcaption>Triangulation of Me</figcaption>
+				</td>
+				<td>
+					<img src="./output/iu_mesh.png">
+					<figcaption>Triangulation of I.U.</figcaption>
+				</td>
+			</tr>
+		</table>
+		<figure>
+			<img src="./output/middle.png">
+			<figcaption>Middle Image</figcaption>
+		</figure>
 		<h3> 3. Morphing Sequence </h3>
 	</p>
 	<p>
 		To make this into a video, we just need to calculate the middle
-          objects of each frame. </br>All we need to do is to variate alpha. </br>
-          Then I can create a gif :)
-	<p>
-                    <img src="./output/me_iu.gif">
+		objects of each frame. </br>All we need to do is to variate alpha. </br>
+		Then I can create a gif :)
+		<p>
+			<img src="./output/me_iu.gif">
 
-    <h3> 4. Computing the “mean” face of a population </h3>
-    To find the average face of a population, we apply the same logic. We
-          find the average shape by interpolating all shape vectors. Warp all
-          the individual images to the average shape. And combine the weighted
-          pixel values.
-        </table>
-      <table style="width:100%">
-		<tr>
+			<h3> 4. Computing the “mean” face of a population </h3>
+			To find the average face of a population, we apply the same logic. We
+			find the average shape by interpolating all shape vectors. Warp all
+			the individual images to the average shape. And combine the weighted
+			pixel values.
+			</table>
+			<table style="width:100%">
+				<tr>
 
-			<td>
-				<img src="./output/mean_danes.jpg">
-				<figcaption>Average of Danes</figcaption>
-            </td>
-            <td>
-				<img src="./output/danes_mesh.png">
-                <figcaption>Triangulation of Average</figcaption>
-            </td>
-		</tr>
-</table>
-    <p> Here are some examples of warping input to "mean danes"</p>
-         <table style="width:100%">
-		<tr>
+					<td>
+						<img src="./output/mean_danes.jpg">
+						<figcaption>Average of Danes</figcaption>
+					</td>
+					<td>
+						<img src="./output/danes_mesh.png">
+						<figcaption>Triangulation of Average</figcaption>
+					</td>
+				</tr>
+			</table>
+			<p> Here are some examples of warping input to "mean danes"</p>
+			<table style="width:100%">
+				<tr>
 
-			<td>
-				<img src="./danes/01-1m.jpg">
-				<figcaption>Input</figcaption>
-            </td>
-            <td>
-				<img src="./output/01-1m_warped.png">
-                <figcaption>Warped</figcaption>
-            </td>
-		</tr>
-		<tr>
+					<td>
+						<img src="./danes/01-1m.jpg">
+						<figcaption>Input</figcaption>
+					</td>
+					<td>
+						<img src="./output/01-1m_warped.png">
+						<figcaption>Warped</figcaption>
+					</td>
+				</tr>
+				<tr>
 
-			<td>
-				<img src="./danes/15-1f.jpg">
-				<figcaption>Input</figcaption>
-            </td>
-            <td>
-				<img src="./output/15-1f_warped.png">
-                <figcaption>Warped</figcaption>
-            </td>
-		</tr>
-		<tr>
+					<td>
+						<img src="./danes/15-1f.jpg">
+						<figcaption>Input</figcaption>
+					</td>
+					<td>
+						<img src="./output/15-1f_warped.png">
+						<figcaption>Warped</figcaption>
+					</td>
+				</tr>
+				<tr>
 
-			<td>
-				<img src="./danes/13-1m.jpg">
-				<figcaption>Input</figcaption>
-            </td>
-            <td>
-				<img src="./output/13-1m_warped.png">
-                <figcaption>Warped</figcaption>
-            </td>
-		</tr>
-</table>
-    <h3> Caricature </h3>
-    We can make our faces look more cartoon-like by extrapolating our
-          unique qualities. First, find the difference between my face’s shape
-          vector and the population mean’s shape vector. Then emphasize the
-          difference (i.e. my unique qualities) by adding it to the original
-          image of myself.
-          <p> Using a simple population of I.U., me and another student, I created some caricatures of myself. I used a variable alpha to adjust the caricature degree.</p>
-         <table style="width:100%">
-                  <tr>
-                  			<td>
-				<img src="./input/me.jpg">
-				<figcaption>original me</figcaption>
-            </td>
-			<td>
-				<img src="./output/cari_me8.jpg">
-				<figcaption>alpha = 0.8</figcaption>
-            </td>
-            <td>
-				<img src="./output/cari_me3.jpg">
-                <figcaption>alpha = 3 - "I am a fish"</figcaption>
-            </td>
-		</tr>
-</table>
-	<h3> Bells and Whistles </h3>
+					<td>
+						<img src="./danes/13-1m.jpg">
+						<figcaption>Input</figcaption>
+					</td>
+					<td>
+						<img src="./output/13-1m_warped.png">
+						<figcaption>Warped</figcaption>
+					</td>
+				</tr>
+			</table>
+			<h3> Caricature </h3>
+			We can make our faces look more cartoon-like by extrapolating our
+			unique qualities. First, find the difference between my face’s shape
+			vector and the population mean’s shape vector. Then emphasize the
+			difference (i.e. my unique qualities) by adding it to the original
+			image of myself.
+			<p> Using a simple population of I.U., me and another student, I created some caricatures of myself. I used
+				a variable alpha to adjust the caricature degree.</p>
+			<table style="width:100%">
+				<tr>
+					<td>
+						<img src="./input/me.jpg">
+						<figcaption>original me</figcaption>
+					</td>
+					<td>
+						<img src="./output/cari_me8.jpg">
+						<figcaption>alpha = 0.8</figcaption>
+					</td>
+					<td>
+						<img src="./output/cari_me3.jpg">
+						<figcaption>alpha = 3 - "I am a fish"</figcaption>
+					</td>
+				</tr>
+			</table>
+			<h3> Bells and Whistles </h3>
 
-		Together with Roma Desai
-Vanessa Lin, 
-Jason Wang, 
-Jenny Song, 
-Ankit Agarwal, 
-Won Ryu, 
-Briana Zhang, 
-Tushar Sharma, 
-Michael Wang, 
-Ja (Thanakul) Wattanawong, 
-William Loo, and
-Gary Yang,  we have created a video of our
-          faces morphing to one another! </br>
-          <br>
-          Here is the link: <a href=" https://youtu.be/O3vouduLS3w "> https://youtu.be/O3vouduLS3w </a>
-          </br>
-	
+			Together with Roma Desai
+			Vanessa Lin,
+			Jason Wang,
+			Jenny Song,
+			Ankit Agarwal,
+			Won Ryu,
+			Briana Zhang,
+			Tushar Sharma,
+			Michael Wang,
+			Ja (Thanakul) Wattanawong,
+			William Loo, and
+			Gary Yang, we have created a video of our
+			faces morphing to one another! </br>
+			<br>
+			Here is the link: <a href=" https://youtu.be/O3vouduLS3w "> https://youtu.be/O3vouduLS3w </a>
+			</br>
+
 </body>
 
 </html>
