@@ -98,17 +98,17 @@ def compute_affine(tri1_pts, tri2_pts):
     return inverse_A
 
 
-def get_triangle_pixels(
-    triangle_vertices: np.ndarray, shape=(DEFAULT_HEIGHT, DEFAULT_WIDTH)
-):
-    """
-    Returns the coordinates of pixels within triangle for an image
-    """
-    assert_is_triangle(triangle_vertices)
-    rr, cc = sk.draw.polygon(
-        triangle_vertices[:, 0], triangle_vertices[:, 1], shape=shape
-    )
-    return rr, cc
+# def get_triangle_pixels(
+#     triangle_vertices: np.ndarray, shape=(DEFAULT_HEIGHT, DEFAULT_WIDTH)
+# ):
+#     """
+#     Returns the coordinates of pixels within triangle for an image
+#     """
+#     assert_is_triangle(triangle_vertices)
+#     rr, cc = sk.draw.polygon(
+#         triangle_vertices[:, 0], triangle_vertices[:, 1], shape=shape
+#     )
+#     return rr, cc
 
 
 def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
@@ -122,7 +122,7 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     # inverse of affine is just the transpose
     # inverse = np.linalg.inv(affine_mat)# TODO why don't I need to do this?
 
-    y, x, _ = img.shape
+    x, y, _ = img.shape
     rr, cc = sk.draw.polygon(
         target_triangle_vertices[:, 0], target_triangle_vertices[:, 1], shape=(y, x)
     )
@@ -132,8 +132,9 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     # print(target_points)
     src_points = affine_mat @ target_points
     # print(src_points)
-    # transformed = np.around(src_points)
-    transformed = src_points  # TODO round or not?
+    # transformed = np.around(transformed)
+    transformed = src_points  # TODO
+
     return transformed
 
 
@@ -170,7 +171,9 @@ def warp_img(
 
         # do inverse warping
         h, w, _ = img.shape
-        target_rr, target_cc = get_triangle_pixels(target_vertices, shape=(w, h))
+        target_rr, target_cc = sk.draw.polygon(
+            target_vertices[:, 0], target_vertices[:, 1], shape=(w, h)
+        )
         print(target_rr.shape, target_cc.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
 
@@ -249,7 +252,7 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
 
         # Transform points to the source image domain
         if vanessa:
-            #mask
+            # mask
             rr, cc = sk.draw.polygon(
                 avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
             )
@@ -265,32 +268,12 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
 
         else:
             # mask
-            rr, cc = get_triangle_pixels(avg_t_points[i], shape=(y, x))
-            print("in", rr.shape, cc.shape)
-            #find coordinates
-            transformed = inverse_affine(im, im_t_points[i], avg_t_points[i])
-
-            print("xxxxxxxxxxxx")
-            img = im
-            img_triangle_vertices = im_t_points[i]
-            target_triangle_vertices = avg_t_points[i]
-
-            affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
-            # inverse of affine is just the transpose
-            # inverse = np.linalg.inv(affine_mat)
-            # rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
-            x, y, _ = img.shape
+            x, y, _ = im.shape
             rr, cc = sk.draw.polygon(
-                target_triangle_vertices[:, 0], target_triangle_vertices[:, 1], shape=(y, x)
+                avg_t_points[i][:, 0], avg_t_points[i][:, 1], shape=(y, x)
             )
-            print(img.shape)
-            print("out", rr.shape, cc.shape)
-            target_points = np.vstack([rr, cc, np.ones(len(rr))])
-            # print(target_points)
-            src_points = affine_mat @ target_points
-            # print(src_points)
-            # transformed = np.around(transformed)
-            transformed = src_points  # TODO
+            print("in", rr.shape, cc.shape)
+            transformed = inverse_affine(im, im_t_points[i], avg_t_points[i])
 
         print(transformed.shape)
 
