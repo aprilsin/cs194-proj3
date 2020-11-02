@@ -62,7 +62,22 @@ def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
 ###############################
 
 
-def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
+# Vanessa
+def compute_affine(tri1_pts, tri2_pts):
+    # print(tri1_pts.T.shape, tri1_pts[:, 0])
+    source = np.vstack((tri1_pts.T, [1, 1, 1]))
+    # print(source)
+    target = np.vstack((tri2_pts.T, [1, 1, 1]))
+    # print(target)
+
+    # T = inv(target * inv(source))
+    A = np.dot(target, np.linalg.inv(source))
+    inverse_A = np.linalg.inv(A)
+    # print(inverse_A)
+    return inverse_A
+
+
+def get_inv_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
 
     assert_is_triangle(start)
     assert_is_triangle(target)
@@ -83,42 +98,13 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
     return np.linalg.inv(T)  # TODO why anoter inverse? because we inversed the input
 
 
-# Vanessa
-def compute_affine(tri1_pts, tri2_pts):
-    # print(tri1_pts.T.shape, tri1_pts[:, 0])
-    source = np.vstack((tri1_pts.T, [1, 1, 1]))
-    # print(source)
-    target = np.vstack((tri2_pts.T, [1, 1, 1]))
-    # print(target)
-
-    # T = inv(target * inv(source))
-    A = np.dot(target, np.linalg.inv(source))
-    inverse_A = np.linalg.inv(A)
-    # print(inverse_A)
-    return inverse_A
-
-
-def get_triangle_pixels(triangle_vertices: np.ndarray, shape):
-    """
-    Returns the coordinates of pixels within triangle for an image
-    """
-    assert_is_triangle(triangle_vertices)
-    rr, cc = sk.draw.polygon(
-        triangle_vertices[:, 0], triangle_vertices[:, 1], shape=shape
-    )
-    return rr, cc
-
-
 def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     """ Returns the coordinates of pixels from original image. """
     assert_img_type(img)
     assert_is_triangle(img_triangle_vertices)
     assert_is_triangle(target_triangle_vertices)
 
-    affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
-
-    # inverse of affine is just the transpose
-    inverse = np.linalg.inv(affine_mat)  # TODO why don't I need to do this?
+    inv_affine_mat = get_inv_affine_mat(img_triangle_vertices, target_triangle_vertices)
 
     x, y, _ = img.shape
     target_rr, target_cc = sk.draw.polygon(
@@ -130,7 +116,7 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     target_points = np.vstack(
         (target_rr, target_cc, np.ones(len(target_cc)))
     )  # append 1 to all rows?
-    src_points = affine_mat @ target_points
+    src_points = inv_affine_mat @ target_points
 
     return src_points
 
@@ -237,21 +223,29 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
         img_triangle_vertices = im_t_points[i]
         if vanessa:
             affine_mat = affine_mats[i]
+            # Mask
+            x, y, _ = im.shape
+            target_rr, target_cc = sk.draw.polygon(
+                target_triangle_vertices.T[0],
+                target_triangle_vertices.T[1],
+                shape=(y, x),
+            )
+            # Transform points to the source image domain
+            target_points = np.vstack(
+                (target_rr, target_cc, np.ones(len(target_cc)))
+            )  # append 1 to all rows?
+            src_points = affine_mat @ target_points
+            # transformed = np.around(src_points).astype(int)
+
         else:
-            affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
-        # Mask
-        x, y, _ = im.shape
-        target_rr, target_cc = sk.draw.polygon(
-            target_triangle_vertices.T[0],
-            target_triangle_vertices.T[1],
-            shape=(y, x),
-        )
-        # Transform points to the source image domain
-        target_points = np.vstack(
-            (target_rr, target_cc, np.ones(len(target_cc)))
-        )  # append 1 to all rows?
-        src_points = affine_mat @ target_points
-        # transformed = np.around(src_points).astype(int)
+            target_rr, target_cc = sk.draw.polygon(
+                target_triangle_vertices.T[0],
+                target_triangle_vertices.T[1],
+                shape=(y, x),
+            )
+            src_points = inverse_affine(
+                img, img_triangle_vertices, target_triangle_vertices
+            )
         transformed = src_points
         rr, cc = target_rr, target_cc
 
