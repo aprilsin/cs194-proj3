@@ -79,8 +79,8 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
     # B = T * A
     # T = B * A^-1
     T = B @ inv
-    return T
-    # return np.linalg.inv(T) # TODO why anoter inverse? because we inversed the input
+    # return T
+    return np.linalg.inv(T)  # TODO why anoter inverse? because we inversed the input
 
 
 # Vanessa
@@ -98,9 +98,7 @@ def compute_affine(tri1_pts, tri2_pts):
     return inverse_A
 
 
-def get_triangle_pixels(
-    triangle_vertices: np.ndarray, shape
-):
+def get_triangle_pixels(triangle_vertices: np.ndarray, shape):
     """
     Returns the coordinates of pixels within triangle for an image
     """
@@ -123,19 +121,18 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     inverse = np.linalg.inv(affine_mat)  # TODO why don't I need to do this?
 
     x, y, _ = img.shape
-    rr, cc = sk.draw.polygon(
-        target_triangle_vertices[:, 0], target_triangle_vertices[:, 1], shape=(y, x)
+    target_rr, target_cc = sk.draw.polygon(
+        target_triangle_vertices.T[0],
+        target_triangle_vertices.T[1],
+        shape=(y, x),
     )
-    print(img.shape)
-    print("out", rr.shape, cc.shape)
-    target_points = np.vstack([rr, cc, np.ones(len(rr))])
-    # print(target_points)
+    # Transform points to the source image domain
+    target_points = np.vstack(
+        (target_rr, target_cc, np.ones(len(target_cc)))
+    )  # append 1 to all rows?
     src_points = affine_mat @ target_points
-    # print(src_points)
-    # transformed = np.around(transformed)
-    transformed = src_points  # TODO
 
-    return transformed
+    return src_points
 
 
 def warp_img(
@@ -235,63 +232,33 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
     )
 
     for i in range(len(affine_mats)):
+        img = im
+        target_triangle_vertices = avg_t_points[i]
+        img_triangle_vertices = im_t_points[i]
+        if vanessa:
+            affine_mat = affine_mats[i]
+        else:
+            affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
         # Mask
-        if vanessa:
-            rr, cc = sk.draw.polygon(
-                avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
-            )
-        else:
-            rr, cc = get_triangle_pixels(avg_t_points[i], shape=(y, x))
-        # THIS IS GOOD
-        print(rr.shape, cc.shape)
-        # rr1, cc1 = sk.draw.polygon(
-        #     avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
-        # )
-        # rr2, cc2 = get_triangle_pixels(avg_t_points[i], shape=(y, x))
-        # print(np.equal(rr1, rr2).all(), np.equal(cc1, cc2).all())
-
+        x, y, _ = im.shape
+        target_rr, target_cc = sk.draw.polygon(
+            target_triangle_vertices.T[0],
+            target_triangle_vertices.T[1],
+            shape=(y, x),
+        )
         # Transform points to the source image domain
-        if vanessa:
-            # mask
-            rr, cc = sk.draw.polygon(
-                avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
-            )
-            print("in", rr.shape, cc.shape)
-            # find coordinates
-            target_points = np.vstack(
-                (rr, cc, np.ones(len(rr)))
-            )  # append 1 to all rows?
-            src_points = affine_mats[i] @ target_points
-            print(src_points.shape)
-            transformed = np.around(src_points).astype(int)
-            print(transformed.shape)
-
-        else:
-            # mask
-            x, y, _ = im.shape
-            rr, cc = sk.draw.polygon(
-                avg_t_points[i][:, 0], avg_t_points[i][:, 1], shape=(y, x)
-            )
-            print("in", rr.shape, cc.shape)
-            transformed = inverse_affine(im, im_t_points[i], avg_t_points[i])
-            # transformed = np.around(transformed)
-        rr1, cc1 = sk.draw.polygon(
-            avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
-        )
-        rr2, cc2 = sk.draw.polygon(
-            avg_t_points[i][:, 0], avg_t_points[i][:, 1], shape=(y, x)
-        )
-        print(np.equal(rr1, rr2).all(), np.equal(cc1, cc2).all())
-
-        # print(transformed)
+        target_points = np.vstack(
+            (target_rr, target_cc, np.ones(len(target_cc)))
+        )  # append 1 to all rows?
+        src_points = affine_mat @ target_points
+        # transformed = np.around(src_points).astype(int)
+        transformed = src_points
+        rr, cc = target_rr, target_cc
 
         # Interpolate
         new_im[cc, rr, 0] = f_red.ev(transformed[1], transformed[0])
         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
-
-        # TODO remove this
-        break
 
     return new_im
 
