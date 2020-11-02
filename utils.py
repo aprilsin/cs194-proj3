@@ -45,12 +45,13 @@ def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarra
     plt.close()
 
     if APPEND_CORNERS:
+        y, x, _ = img.shape
         points.extend(
             [
                 (0, 0),
-                (0, img.shape[1] - 1),
-                (img.shape[0] - 1, 0),
-                (img.shape[0] - 1, img.shape[1] - 1),
+                (0, y - 1),
+                (x - 1, 0),
+                (x - 1, y - 1),
             ]
         )
     print(f"Picked {num_pts} points successfully.")
@@ -86,7 +87,7 @@ def load_points(name: os.PathLike) -> np.ndarray:
     return pickle.load(open(pickle_name, "rb"))
 
 
-def load_points_from_asf(file_name, APPEND_CORNERS=True) -> np.ndarray:
+def load_points_from_asf(file_name, APPEND_CORNERS=False) -> np.ndarray:
     asf = open(file_name, "r")
     lines_read = asf.readlines()
     num_pts = int(lines_read[9])
@@ -98,27 +99,13 @@ def load_points_from_asf(file_name, APPEND_CORNERS=True) -> np.ndarray:
     for line in lines:
         data = line.split(" \t")
         points.append((float(data[2]), float(data[3])))
-    if APPEND_CORNERS:
-        points.append((0.0, 0.0))
-        points.append((1.0, 0.0))
-        points.append((0.0, 1.0))
-        points.append((1.0, 1.0))
     points = np.array(points)
     points[:, 0] *= DANES_WIDTH
     points[:, 1] *= DANES_HEIGHT
-
-    # points = np.genfromtxt(
-    #     file_name,
-    #     dtype="float",
-    #     comments="#",
-    #     skip_header=1,
-    #     skip_footer=1,
-    #     usecols=(2, 3),
-    # )
-    # points.append([0.0, 0.0])
-    # points.append([1.0, 0.0])
-    # points.append([0.0, 1.0])
-    # points.append([1.0, 1.0])
+    if APPEND_CORNERS:
+        y, x = DANES_HEIGHT - 1, DANES_WIDTH - 1
+        corners = np.array(((0.0, 0.0), (x, 0.0), (0.0, y), (x, y)))
+        points = np.vstack((points, corners))
     return points
 
 
