@@ -200,7 +200,7 @@ def warp_img(
 ## From Venessa Lin ###
 
 # Warp images to shape
-def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
+def warp_image_to(im, im_points, avg_points, del_tri: Delaunay):
     assert isinstance(del_tri, Delaunay)
 
     del_tri = del_tri.simplices.copy()
@@ -217,12 +217,7 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
 
     # Affine transformations for triangles
     for i in range(len(del_tri)):
-        if vanessa:
-            affine_mats.append(compute_affine(im_t_points[i], avg_t_points[i]))
-        else:
-            affine_mats.append(get_affine_mat(im_t_points[i], avg_t_points[i]))
-        # TODO remove this
-        break
+        affine_mats.append(compute_affine(im_t_points[i], avg_t_points[i]))
     # Create warped image
     new_im = np.zeros(im.shape)
 
@@ -250,9 +245,6 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
         new_im[cc, rr, 0] = f_red.ev(transformed[1], transformed[0])
         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
-
-        # TODO remove this
-        break
 
     new_im = np.clip(new_im, 0.0, 1.0)
     return new_im
