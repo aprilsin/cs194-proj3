@@ -1,8 +1,6 @@
 .ipynb_checkpoints/
 __pycache__/
 src_images/
-data/
-output/
 *.pyc
 *.mov
 align_image_code.py 
