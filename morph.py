@@ -78,24 +78,19 @@ def compute_affine(tri1_pts, tri2_pts):
 
 
 def get_inv_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
-
     assert_is_triangle(start)
     assert_is_triangle(target)
-    # print(start.T.shape, start[:, 0])
+
     A = np.vstack((start[:, 0], start[:, 1], [1, 1, 1]))
-    # print(A)
-    # print(A.shape)
     try:
         inv = np.linalg.inv(A)
     except:
         return
     B = np.vstack((target[:, 0], target[:, 1], [1, 1, 1]))
-    # print(B)
     # B = T * A
     # T = B * A^-1
     T = B @ inv
-    # return T
-    return np.linalg.inv(T)  # TODO why anoter inverse? because we inversed the input
+    return np.linalg.inv(T)
 
 
 def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
@@ -130,55 +125,40 @@ def warp_img(
     assert_img_type(img)
     assert_points(img_pts)
     assert_points(target_pts)
+
     h, w, c = img.shape
     warped = np.zeros_like(img)
-    # num_triangles, _, _ = triangulation.simplices
 
     # Interpolation functions
-    # f_red = interpolate.RectBivariateSpline(
-    #     range(img.shape[0]), range(img.shape[1]), img[:, :, 0]
-    # )
-    # f_green = interpolate.RectBivariateSpline(
-    #     range(img.shape[0]), range(img.shape[1]), img[:, :, 1]
-    # )
-    # f_blue = interpolate.RectBivariateSpline(
-    #     range(img.shape[0]), range(img.shape[1]), img[:, :, 2]
-    # )
+    f_red = interpolate.RectBivariateSpline(
+        range(img.shape[0]), range(img.shape[1]), img[:, :, 0]
+    )
+    f_green = interpolate.RectBivariateSpline(
+        range(img.shape[0]), range(img.shape[1]), img[:, :, 1]
+    )
+    f_blue = interpolate.RectBivariateSpline(
+        range(img.shape[0]), range(img.shape[1]), img[:, :, 2]
+    )
 
     for simplex in triangulation.simplices:
 
         target_vertices = target_pts[simplex]
         img_vertices = img_pts[simplex]
-        assert_is_triangle(target_vertices)
-        assert_is_triangle(img_vertices)
 
-        # do inverse warping
+        # Transform points to the source image domain with inverse warping
         h, w, _ = img.shape
         target_rr, target_cc = sk.draw.polygon(
-            target_vertices[:, 0], target_vertices[:, 1], shape=(w, h)
+            target_vertices.T[0],
+            target_vertices.T[1],
+            shape=(w, h),
         )
-        print(target_rr.shape, target_cc.shape)
-        src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
+        src_points = inverse_affine(img, img_vertices, target_vertices)
 
-        # assert not DEFAULT_HEIGHT in [max(target_rr), max(src_rr)]
-        # assert not DEFAULT_WIDTH in [max(target_cc), max(src_cc)]
-
-        src_rr, src_cc = (
-            utils.ifloor(src_rr).clip(0, h - 1),
-            utils.ifloor(src_cc).clip(0, w - 1),
-        )
-        # Transform points to the source image domain
-        #         transformed = np.around(affine_mats[i] @ np.vstack((rr, cc, np.ones(len(rr))))).astype(int)
-        transformed = src_rr, src_cc
         # Interpolate
-        # warped[target_cc, target_rr, 0] = f_red.ev(transformed[1], transformed[0])
-        # warped[target_cc, target_rr, 1] = f_green.ev(transformed[1], transformed[0])
-        # warped[target_cc, target_rr, 2] = f_blue.ev(transformed[1], transformed[0])
-        # TODO remove this
-        break
-    #         warped[target_rr, target_cc] = img[src_rr, src_cc]
+        warped[target_cc, target_rr, 0] = f_red.ev(src_points[1], src_points[0])
+        warped[target_cc, target_rr, 1] = f_green.ev(src_points[1], src_points[0])
+        warped[target_cc, target_rr, 2] = f_blue.ev(src_points[1], src_points[0])
 
-    #     result = np.flip(transform.rotate(warped, -90), axis=1)
     warped = np.clip(warped, 0.0, 1.0)
     assert_img_type(warped)
     return warped
@@ -235,7 +215,6 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
                 (target_rr, target_cc, np.ones(len(target_cc)))
             )  # append 1 to all rows?
             src_points = affine_mat @ target_points
-            # transformed = np.around(src_points).astype(int)
 
         else:
             target_rr, target_cc = sk.draw.polygon(
@@ -246,7 +225,7 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
             src_points = inverse_affine(
                 img, img_triangle_vertices, target_triangle_vertices
             )
-        transformed = src_points
+        transformed = np.around(src_points)
         rr, cc = target_rr, target_cc
 
         # Interpolate
@@ -254,12 +233,12 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
 
+    new_im = np.clip(new_im, 0.0, 1.0)
+    # assert_img_type(warped)
     return new_im
 
 
 def cross_dissolve(warped_im1, warped_im2, alpha):
-    assert_img_type(warped_im1)
-    assert_img_type(warped_im2)
     return weighted_avg(warped_im1, warped_im2, alpha=alpha)
 
 
