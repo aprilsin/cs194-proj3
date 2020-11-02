@@ -171,7 +171,9 @@ def warp_img(
         assert_is_triangle(img_vertices)
 
         # do inverse warping
-        target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
+        h, w, _ = img.shape
+        target_rr, target_cc = get_triangle_pixels(target_vertices, shape=(w, h))
+        print(target_rr.shape, target_cc.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
 
         # assert not DEFAULT_HEIGHT in [max(target_rr), max(src_rr)]
@@ -188,7 +190,8 @@ def warp_img(
         # warped[target_cc, target_rr, 0] = f_red.ev(transformed[1], transformed[0])
         # warped[target_cc, target_rr, 1] = f_green.ev(transformed[1], transformed[0])
         # warped[target_cc, target_rr, 2] = f_blue.ev(transformed[1], transformed[0])
-
+        # TODO remove this
+        break
     #         warped[target_rr, target_cc] = img[src_rr, src_cc]
 
     #     result = np.flip(transform.rotate(warped, -90), axis=1)
@@ -200,7 +203,7 @@ def warp_img(
 ## From Venessa Lin ###
 
 # Warp images to shape
-def warp_image_to(im, im_points, avg_points, del_tri: Delaunay):
+def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
     assert isinstance(del_tri, Delaunay)
 
     del_tri = del_tri.simplices.copy()
@@ -234,17 +237,41 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay):
 
     for i in range(len(affine_mats)):
         # Mask
-        rr, cc = sk.draw.polygon(
-            avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
-        )
+        if vanessa:
+            rr, cc = sk.draw.polygon(
+                avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
+            )
+        else:
+            rr, cc = get_triangle_pixels(avg_t_points[i], shape=(y, x))
+        print(rr.shape, cc.shape)
         # Transform points to the source image domain
-        transformed = np.around(
-            affine_mats[i] @ np.vstack((rr, cc, np.ones(len(rr))))
-        ).astype(int)
+        if vanessa:
+            target_points = np.vstack((rr, cc, np.ones(len(rr)))) # append 1 to all rows?
+            transformed = np.around(
+                affine_mats[i] @ target_points
+            ).astype(int)
+            print(affine_mats[i] @ np.vstack((rr, cc, np.ones(len(rr)))))
+        else:
+            img = im
+            img_triangle_vertices = im_t_points[i]
+            target_triangle_vertices = avg_t_points[i]
+            affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
+            # inverse of affine is just the transpose
+            # inverse = np.linalg.inv(affine_mat)
+            rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
+            target_points = np.vstack([rr, cc, np.ones(len(rr))])
+            # print(target_points)
+            src_points = affine_mat @ target_points
+            print(src_points)
+            src_rr, src_cc = src_points[1, :], src_points[0, :]
+            transformed = np.around(src_points)
         # Interpolate
         new_im[cc, rr, 0] = f_red.ev(transformed[1], transformed[0])
         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
+
+        #TODO remove this
+        break
 
     new_im = np.clip(new_im, 0.0, 1.0)
     return new_im
