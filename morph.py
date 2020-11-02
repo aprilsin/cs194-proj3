@@ -79,7 +79,8 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
     # B = T * A
     # T = B * A^-1
     T = B @ inv
-    return np.linalg.inv(T) # TODO why anoter inverse? because we inversed the input
+    return T
+    # return np.linalg.inv(T) # TODO why anoter inverse? because we inversed the input
 
 
 # Vanessa
@@ -130,13 +131,30 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     assert_is_triangle(img_triangle_vertices)
     assert_is_triangle(target_triangle_vertices)
 
+    # affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
+    # # inverse of affine is just the transpose
+    # # inverse = np.linalg.inv(affine_mat) # TODO why don't I need to do this?
+    # rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
+    # target_points = np.vstack([rr, cc, np.ones(len(rr))])
+    # src_points = affine_mat @ target_points
+    # return src_points
+
+    # img = im
+    # img_triangle_vertices = im_t_points[i]
+    # target_triangle_vertices = avg_t_points[i]
     affine_mat = get_affine_mat(img_triangle_vertices, target_triangle_vertices)
     # inverse of affine is just the transpose
-    inverse = np.linalg.inv(affine_mat)
+    # inverse = np.linalg.inv(affine_mat)
     rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
+    print(img.shape)
+    # print(rr, cc)
     target_points = np.vstack([rr, cc, np.ones(len(rr))])
-    src_points = inverse @ target_points
-    return src_points[1, :], src_points[0, :]
+    # print(target_points)
+    src_points = affine_mat @ target_points
+    print(src_points)
+    # transformed = np.around(src_points)
+    transformed = src_points
+    return transformed
 
 
 def warp_img(
@@ -243,15 +261,24 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
             )
         else:
             rr, cc = get_triangle_pixels(avg_t_points[i], shape=(y, x))
-        print(rr.shape, cc.shape)
+        # THIS IS GOOD
+        # print(rr, cc)
+        # rr1, cc1 = sk.draw.polygon(
+        #     avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x)
+        # )
+        # rr2, cc2 = get_triangle_pixels(avg_t_points[i], shape=(y, x))
+        # print(np.equal(rr1, rr2).all(), np.equal(cc1, cc2).all())
+
         # Transform points to the source image domain
         if vanessa:
-            target_points = np.vstack((rr, cc, np.ones(len(rr)))) # append 1 to all rows?
-            transformed = np.around(
-                affine_mats[i] @ target_points
-            ).astype(int)
-            print(affine_mats[i] @ np.vstack((rr, cc, np.ones(len(rr)))))
+            target_points = np.vstack(
+                (rr, cc, np.ones(len(rr)))
+            )  # append 1 to all rows?
+            transformed = np.around(affine_mats[i] @ target_points).astype(int)
+
         else:
+            transformed = inverse_affine(im, im_t_points[i], avg_t_points[i])
+
             img = im
             img_triangle_vertices = im_t_points[i]
             target_triangle_vertices = avg_t_points[i]
@@ -259,21 +286,25 @@ def warp_image_to(im, im_points, avg_points, del_tri: Delaunay, vanessa=True):
             # inverse of affine is just the transpose
             # inverse = np.linalg.inv(affine_mat)
             rr, cc = get_triangle_pixels(target_triangle_vertices, img.shape)
+            print(img.shape)
+            # print(rr, cc)
             target_points = np.vstack([rr, cc, np.ones(len(rr))])
             # print(target_points)
             src_points = affine_mat @ target_points
             print(src_points)
-            src_rr, src_cc = src_points[1, :], src_points[0, :]
-            transformed = np.around(src_points)
+            # transformed = np.around(src_points)
+            # transformed = src_points #TODO
+
+        # print(transformed[0].shape)
+
         # Interpolate
         new_im[cc, rr, 0] = f_red.ev(transformed[1], transformed[0])
         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
 
-        #TODO remove this
+        # TODO remove this
         break
 
-    new_im = np.clip(new_im, 0.0, 1.0)
     return new_im
 
 
