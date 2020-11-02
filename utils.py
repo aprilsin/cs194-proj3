@@ -41,7 +41,7 @@ def pick_points(img: ToImgArray, num_pts: int, APPEND_CORNERS=True) -> np.ndarra
     img = to_img_arr(img)
     print(f"Please select {num_pts} points in image.")
     plt.imshow(img)
-    points = plt.ginput(num_pts, timeout=0)
+    points = plt.ginput(num_pts, timeout=0)  # never timeout
     plt.close()
 
     if APPEND_CORNERS:

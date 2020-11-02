@@ -1,6 +1,8 @@
 # morphing sequence
 
+import copy
 import math
+import time
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -8,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage as sk
 import skimage.io as io
+from matplotlib import animation
 from scipy import interpolate
 from scipy.spatial import Delaunay
 from skimage import transform
@@ -60,8 +63,7 @@ def plot_tri_mesh(img: np.ndarray, points: np.ndarray, triangulation) -> None:
 
 
 def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
-    # B = T * A
-    # T = B * A^-1
+
     assert_is_triangle(start)
     assert_is_triangle(target)
     A = np.vstack((start[:, 0], start[:, 1], [1, 1, 1]))
@@ -72,6 +74,8 @@ def get_affine_mat(start: Triangle, target: Triangle) -> np.ndarray:
         return
     B = np.vstack((target[:, 0], target[:, 1], [1, 1, 1]))
 
+    # B = T * A
+    # T = B * A^-1
     return B @ inv
 
 
@@ -115,8 +119,6 @@ def inverse_affine(img, img_triangle_vertices, target_triangle_vertices):
     return src_points[1, :], src_points[0, :]
 
 
-
-
 def warp_img(
     img: np.ndarray,
     img_pts: np.ndarray,
@@ -139,16 +141,64 @@ def warp_img(
         # do inverse warping
         target_rr, target_cc = get_triangle_pixels(target_vertices, img.shape)
         src_rr, src_cc = inverse_affine(img, img_vertices, target_vertices)
-        
+
         # assert not DEFAULT_HEIGHT in [max(target_rr), max(src_rr)]
         # assert not DEFAULT_WIDTH in [max(target_cc), max(src_cc)]
-        
-        src_rr, src_cc = (utils.ifloor(src_rr).clip(0, h - 1), utils.ifloor(src_cc).clip(0, w - 1))
+
+        src_rr, src_cc = (
+            utils.ifloor(src_rr).clip(0, h - 1),
+            utils.ifloor(src_cc).clip(0, w - 1),
+        )
         warped[target_rr, target_cc] = img[src_rr, src_cc]
 
     result = np.flip(transform.rotate(warped, -90), axis=1)
     assert_img_type(result)
     return result
+
+
+### From Venessa Lin ###
+
+# Warp images to shape
+# def warp_image_to(im, im_points, avg_points, del_tri):
+#     x, y, _ = im.shape
+#     # Points of triangles
+#     im_t_points = im_points[del_tri].copy()
+#     avg_t_points = avg_points[del_tri].copy()
+
+#     # Affine transformations
+#     affine_mats = []
+
+#     # Affine transformations for triangles
+#     for i in range(len(del_tri)):
+#         affine_mats.append(compute_affine(im_t_points[i], avg_t_points[i]))
+
+#     # Create warped image
+#     new_im = np.zeros(im.shape)
+
+#     # Interpolation functions
+#     f_red = interpolate.RectBivariateSpline(
+#         range(im.shape[0]), range(im.shape[1]), im[:, :, 0]
+#     )
+#     f_green = interpolate.RectBivariateSpline(
+#         range(im.shape[0]), range(im.shape[1]), im[:, :, 1]
+#     )
+#     f_blue = interpolate.RectBivariateSpline(
+#         range(im.shape[0]), range(im.shape[1]), im[:, :, 2]
+#     )
+
+#     for i in range(len(affine_mats)):
+#         # Mask
+#         rr, cc = polygon(avg_t_points[i].T[0], avg_t_points[i].T[1], shape=(y, x))
+#         # Transform points to the source image domain
+#         transformed = np.around(
+#             affine_mats[i] @ np.vstack((rr, cc, np.ones(len(rr))))
+#         ).astype(int)
+#         # Interpolate
+#         new_im[cc, rr, 0] = f_red.ev(transformed[1], transformed[0])
+#         new_im[cc, rr, 1] = f_green.ev(transformed[1], transformed[0])
+#         new_im[cc, rr, 2] = f_blue.ev(transformed[1], transformed[0])
+
+#     return new_im
 
 
 def cross_dissolve(warped_im1, warped_im2, alpha):
@@ -172,12 +222,6 @@ def compute_middle_object(
     middle_img = cross_dissolve(im1_warped, im2_warped, alpha=alpha)
     # middle_img = transform.rotate(middle_img, -90)
     return middle_img, mid_pts, triangulation
-
-
-import copy
-import time
-
-from matplotlib import animation
 
 
 def compute_morph_video(
